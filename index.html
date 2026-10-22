@@ -4,25 +4,25 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#101a25">
-<title>カメレオン・ワールド</title>
+<title>カメレオン・ワールド：月光の魔法森</title>
 <style>
-:root{--glass:rgba(12,22,31,.82);--line:rgba(255,255,255,.16);--mint:#a9f2d0;--gold:#ffd58a;--ink:#f4f7f5}
+:root{--glass:rgba(17,19,48,.78);--line:rgba(195,202,255,.22);--mint:#9cf7e4;--gold:#f6d6ff;--ink:#f4f4ff}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101a25;color:var(--ink);font-family:ui-rounded,"Hiragino Kaku Gothic ProN",system-ui,sans-serif;touch-action:none}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#171b43;color:var(--ink);font-family:ui-rounded,"Hiragino Kaku Gothic ProN",system-ui,sans-serif;touch-action:none}
 button{font:inherit;color:inherit;border:1px solid var(--line);background:rgba(255,255,255,.08);border-radius:14px;padding:11px 14px;cursor:pointer;touch-action:manipulation}
 button:active{transform:scale(.98)}button.selected{border-color:var(--mint);background:rgba(169,242,208,.17);box-shadow:0 0 0 1px rgba(169,242,208,.25) inset}
 #world{position:fixed;inset:0;width:100%;height:100%;display:block}
 #loading{position:fixed;inset:0;display:grid;place-items:center;background:#101a25;z-index:20}
 .loadcard{padding:26px;text-align:center}.spinner{width:35px;height:35px;border:3px solid #ffffff30;border-top-color:var(--mint);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}@keyframes spin{to{transform:rotate(360deg)}}
 .screen{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(7,14,22,.28),rgba(7,14,22,.76));overflow:auto}
-.hidden{display:none!important}.panel{width:min(820px,100%);max-height:100%;overflow:auto;background:rgba(11,20,28,.88);backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:24px;padding:clamp(16px,3vw,28px);box-shadow:0 24px 80px #0005}
-.eyebrow{letter-spacing:.18em;text-transform:uppercase;font-size:11px;color:var(--mint);font-weight:800}
+.hidden{display:none!important}.panel{width:min(820px,100%);max-height:100%;overflow:auto;background:linear-gradient(145deg,rgba(27,30,71,.94),rgba(12,29,54,.94));backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:24px;padding:clamp(16px,3vw,28px);box-shadow:0 24px 80px #0008,0 0 36px #776bff18}
+.eyebrow{letter-spacing:.18em;text-transform:uppercase;font-size:11px;color:var(--mint);font-weight:800;text-shadow:0 0 18px #7bf0d055}
 h1{font-size:clamp(34px,7vw,64px);line-height:1.02;letter-spacing:-.05em;margin:10px 0 12px}h2{font-size:20px;margin:0 0 12px}p{color:#c5d2d9;line-height:1.6;margin:8px 0 16px}.sub{font-size:13px;color:#aab9c2}
 .section{margin-top:19px}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .stage{padding:0;overflow:hidden;text-align:left;min-width:0;border-radius:13px}.thumb{height:70px;position:relative;overflow:hidden;background:linear-gradient(135deg,var(--a),var(--b));display:flex;align-items:center;justify-content:center;font-size:29px}
 .thumb:before{content:"";position:absolute;width:85%;height:26px;bottom:-4px;left:8%;background:#17252b66;transform:skewY(-12deg);border-radius:3px}.thumb span{position:relative;filter:drop-shadow(0 3px 2px #0005)}
 .stage .name{display:block;font-size:12px;padding:8px 8px 9px;line-height:1.3}.stage.selected{border-color:var(--mint);box-shadow:0 0 0 1px var(--mint)}
-.options{display:flex;gap:8px;flex-wrap:wrap}.options button{flex:1;min-width:105px}.primary{background:linear-gradient(120deg,#b5f3d6,#75d8bd);color:#10221f;border:0;font-weight:900;box-shadow:0 8px 26px #65d6b444}.big{width:100%;font-size:17px;padding:15px;margin-top:18px;border-radius:16px}.rowline{display:flex;justify-content:space-between;align-items:center;gap:10px}.rolecard{flex:1;text-align:left;min-height:75px}.rolecard strong{display:block;margin-bottom:4px}.rolecard small{color:#b8c9d0}
+.options{display:flex;gap:8px;flex-wrap:wrap}.options button{flex:1;min-width:105px}.primary{background:linear-gradient(120deg,#b4fff0,#9f9aff 60%,#e5aaff);color:#19183a;border:0;font-weight:900;box-shadow:0 8px 26px #65d6b444}.big{width:100%;font-size:17px;padding:15px;margin-top:18px;border-radius:16px}.rowline{display:flex;justify-content:space-between;align-items:center;gap:10px}.rolecard{flex:1;text-align:left;min-height:75px}.rolecard strong{display:block;margin-bottom:4px}.rolecard small{color:#b8c9d0}
 #hud{position:fixed;inset:0;z-index:3;pointer-events:none}.hudtop{position:absolute;top:max(12px,env(safe-area-inset-top));left:12px;right:12px;display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.pill{background:var(--glass);border:1px solid var(--line);border-radius:14px;padding:9px 12px;backdrop-filter:blur(12px);box-shadow:0 4px 18px #0002}.timer{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums}.hudlabel{font-size:10px;color:#a9c0c7;letter-spacing:.1em}.hudmsg{position:absolute;top:24%;left:50%;transform:translateX(-50%);text-align:center;background:#101b24c9;border:1px solid var(--line);padding:10px 16px;border-radius:14px;width:max-content;max-width:88%;font-size:13px}
 #joystick{position:absolute;left:20px;bottom:max(24px,env(safe-area-inset-bottom));width:128px;height:128px;border-radius:50%;background:#14232d9c;border:1px solid #ffffff38;pointer-events:auto;touch-action:none}
 #stick{position:absolute;width:52px;height:52px;left:37px;top:37px;border-radius:50%;background:#b5f3d6dd;border:2px solid #ffffffb0;box-shadow:0 4px 15px #0005}
@@ -49,7 +49,7 @@ h1{font-size:clamp(34px,7vw,64px);line-height:1.02;letter-spacing:-.05em;margin:
  <div class="panel titlepanel">
   <div class="eyebrow">HIDE · SEEK · BLEND IN</div>
   <h1>カメレオン・<br>ワールド<span style="color:var(--mint)">.</span></h1>
-  <p>景色に溶け込め。小さな違和感を見逃すな。<br>毎回変わる街で、CPUとかくれんぼ。</p>
+  <p>星明かりの森に溶け込め。小さな違和感を見逃すな。<br>魔法の世界で、CPUとかくれんぼ。</p>
   <div class="section"><div class="rowline"><h2>01　ステージを選ぶ</h2><span class="sub" id="stagecount">01 / 12</span></div><div id="stages" class="cards"></div></div>
   <div class="section"><h2>02　難易度</h2><div class="options" id="difficulties">
    <button data-diff="0" class="selected"><strong>EASY</strong><br><small>ゆったり</small></button><button data-diff="1"><strong>NORMAL</strong><br><small>標準</small></button><button data-diff="2"><strong>HARD</strong><br><small>鋭い観察</small></button><button data-diff="3"><strong>EXPERT</strong><br><small>短期決戦</small></button>
@@ -86,7 +86,7 @@ h1{font-size:clamp(34px,7vw,64px);line-height:1.02;letter-spacing:-.05em;margin:
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
 const themes=[
-{name:'日本の路地裏',emoji:'🏮',a:'#345b54',b:'#d8a36c',sky:0xa8c8d2,ground:0x687d69,wall:0xc6a98b,accent:0x9c5641,items:['提灯','木箱','植木鉢'],style:'japan'},
+{name:'月光の魔法森',emoji:'🌙',a:'#342c69',b:'#73e8dc',sky:0x171b43,ground:0x243d4d,wall:0x514c83,accent:0x70f0d1,items:['月晶','光るキノコ','星の花'],style:'fantasy'},
 {name:'東京ネオン街',emoji:'🌃',a:'#322b62',b:'#ef5c92',sky:0x34375c,ground:0x34384b,wall:0x45465f,accent:0xff4f9a,items:['ネオン看板','自販機','配電箱'],style:'neon'},
 {name:'京都の古い街並み',emoji:'⛩️',a:'#7a4e3b',b:'#d5b88a',sky:0xb6c8d0,ground:0x8a8270,wall:0xb8a38a,accent:0x6f3d35,items:['石灯籠','竹','木塀'],style:'kyoto'},
 {name:'渋谷風スクランブル',emoji:'🚦',a:'#546878',b:'#e3b66f',sky:0xa9c3d0,ground:0x535b60,wall:0x89949a,accent:0xe6c85c,items:['街灯','広告板','植栽'],style:'city'},
@@ -108,8 +108,8 @@ function init3D(){
  if(!window.THREE){showError('Three.jsを読み込めません。ネット接続を確認して、もう一度お試しください。');return}
  try{scene=new THREE.Scene();scene.background=new THREE.Color(themes[0].sky);scene.fog=new THREE.Fog(themes[0].sky,22,62);
  camera=new THREE.PerspectiveCamera(64,innerWidth/innerHeight,.1,120);
- renderer=new THREE.WebGLRenderer({canvas:$('world'),antialias:false,alpha:false,powerPreference:'low-power'});
- renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+ renderer=new THREE.WebGLRenderer({canvas:$('world'),antialias:innerWidth>700,alpha:false,powerPreference:'high-performance'});
+ quality=innerWidth<700?'low':'high';renderer.setPixelRatio(Math.min(devicePixelRatio||1,innerWidth<700?1.25:1.65));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
  renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
  clock=new THREE.Clock();buildWorld(0);animate();$('loading').classList.add('hidden');$('menu').classList.remove('hidden');
  }catch(e){showError('この端末では3D表示を開始できませんでした。ページを再読み込みしてください。')}
@@ -120,13 +120,13 @@ function cylinder(r1,r2,h,color,x,y,z,segments=7){let m=new THREE.Mesh(new THREE
 function sphere(r,color,x,y,z,segments=8){let m=new THREE.Mesh(new THREE.SphereGeometry(r,segments,6),mat(color));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);worldObjects.push(m);return m}
 let paintCanvas2D=null,paintTexture=null,brushSize=16,paintHistory=[],paintRaycaster=null,paintNdc=null;
 function makePaintTexture(color){
- const c=document.createElement('canvas');c.width=512;c.height=256;const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);
+ const c=document.createElement('canvas');c.width=512;c.height=256;const x=c.getContext('2d');x.fillStyle='#ffffff';x.fillRect(0,0,c.width,c.height);
  const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;tex.needsUpdate=true;return {canvas:c,ctx:x,texture:tex};
 }
 function loadPaintData(actor){const data=localStorage.getItem('cwPaintTexture');if(!data||!actor?.userData.skin)return;const img=new Image();img.onload=()=>{const c=actor.userData.paintCanvas;if(!c)return;const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);actor.userData.paintTexture.needsUpdate=true};img.src=data}
 function makePerson(color=customColor){
  const g=new THREE.Group(),skin=mat(color,.62),dark=mat(0x244c42,.8),eyeWhite=mat(0xfff5d9,.28),pupil=mat(0x14252b,.2),belly=mat(new THREE.Color(color).multiplyScalar(.72),.72);
- const pt=makePaintTexture(color);skin.map=pt.texture;skin.transparent=true;skin.alphaTest=.025;skin.needsUpdate=true;
+ const pt=makePaintTexture(color);skin.map=pt.texture;skin.transparent=false;skin.needsUpdate=true;
  // Rounded, friendly chameleon body instead of blocky humanoid parts
  const torso=new THREE.Mesh(new THREE.SphereGeometry(.58,20,14),skin);torso.scale.set(1.12,.72,1.42);torso.position.set(0,.83,0);g.add(torso);
  const chest=new THREE.Mesh(new THREE.SphereGeometry(.42,16,12),belly);chest.scale.set(.92,.7,.7);chest.position.set(0,.68,-.28);g.add(chest);
@@ -169,13 +169,48 @@ function makeProp(style,x,z,scale=1){
  else{box(.55*scale,.95*scale,.35*scale,base,x,.47*scale,z);box(.59*scale,.13*scale,.39*scale,accent,x,.88*scale,z)}
  hidingSpots.push({x,z,color:kind%2?accent:base,mesh:obj||null,radius:1.5*scale});
 }
+function crystal(x,y,z,scale=1,color=0x73e8dc){
+ const glow=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:1.25,roughness:.22,metalness:.12});
+ const mesh=new THREE.Mesh(new THREE.OctahedronGeometry(.55*scale,0),glow);mesh.scale.set(.72,1.7,.72);mesh.position.set(x,y,z);mesh.rotation.y=rand()*Math.PI;mesh.castShadow=true;scene.add(mesh);worldObjects.push(mesh);
+ const light=new THREE.PointLight(color,.8*scale,4.5*scale,2);light.position.set(x,y+.25*scale,z);scene.add(light);return mesh;
+}
+function fantasyTree(x,z,scale=1){
+ const trunk=cylinder(.12*scale,.2*scale,1.4*scale,0x4a3b62,x,.7*scale,z,7);trunk.rotation.z=(rand()-.5)*.16;
+ for(let j=0;j<3;j++){const crown=sphere((.58-j*.07)*scale,[0x254f65,0x2c6b72,0x3b657e][j],x+(rand()-.5)*.24*scale,1.35*scale+j*.38*scale,z+(rand()-.5)*.22*scale,10);crown.scale.set(1.05,.8,1);}
+ if(rand()>.3)crystal(x+(rand()-.5)*.8*scale,.45*scale,z+.25*scale, .28*scale,choose([0x7ef3d8,0xb29aff,0x6bbcff]));
+}
+function buildFantasyWorld(){
+ // Twilight sky, moonlit moss and a winding crystal path.
+ scene.background=new THREE.Color(0x171b43);scene.fog=new THREE.FogExp2(0x24294f,.018);
+ scene.add(new THREE.HemisphereLight(0x9edfff,0x17233c,1.25));
+ const moonLight=new THREE.DirectionalLight(0xc5d8ff,2.15);moonLight.position.set(-7,14,-5);moonLight.castShadow=true;moonLight.shadow.mapSize.set(768,768);moonLight.shadow.camera.left=-25;moonLight.shadow.camera.right=25;moonLight.shadow.camera.top=25;moonLight.shadow.camera.bottom=-25;scene.add(moonLight);
+ const warm=new THREE.PointLight(0x7c6cff,1.7,28);warm.position.set(0,5,-7);scene.add(warm);
+ const floorMat=mat(0x294554,.96);const floor=new THREE.Mesh(new THREE.PlaneGeometry(58,58,36,36),floorMat);floor.rotation.x=-Math.PI/2;floor.position.y=-.1;floor.receiveShadow=true;scene.add(floor);
+ // broad mossy islands and stepping stones create layered depth
+ for(let i=0;i<38;i++){let x=(rand()-.5)*44,z=(rand()-.5)*44;if(Math.abs(x)<3.5&&Math.abs(z)<3.5)continue;let r=.45+rand()*1.3;const rock=sphere(r,choose([0x344e60,0x3b5961,0x514b72]),x,.03+rand()*.08,z,9);rock.scale.set(1.35,.35+rand()*.2,1);}
+ for(let i=0;i<42;i++){let z=14-i*.68,x=Math.sin(i*.32)*2.6+(rand()-.5)*1.2;const stone=new THREE.Mesh(new THREE.CylinderGeometry(.35+rand()*.2,.45,.12,6),mat(choose([0x8a91b7,0x697fa4,0x5d8b9c]),.72,.08));stone.position.set(x,.02,z);stone.rotation.y=rand()*Math.PI;scene.add(stone);}
+ // arching ancient ruins on the edge of the glade
+ for(let side of [-1,1]){for(let i=0;i<3;i++){let x=side*(8+i*4),z=-9-(i%2)*5;const pillar=box(.65,3.5,.7,0x4d4b78,x,1.75,z);pillar.rotation.z=side*.04;box(1.1,.3,.95,0x7774a8,x,3.55,z);crystal(x,4.05,z,.45,0x9b82ff)}}
+ // magical trees around the playable clearing
+ for(let i=0;i<34;i++){let x=(rand()-.5)*42,z=(rand()-.5)*42;if(Math.abs(x)<5.4&&Math.abs(z)<5.4)continue;fantasyTree(x,z,.75+rand()*.8)}
+ // glowing mushrooms and star flowers
+ for(let i=0;i<76;i++){let x=(rand()-.5)*38,z=(rand()-.5)*38;if(Math.abs(x)<4.5&&Math.abs(z)<4.5)continue;let h=.18+rand()*.35;const stem=cylinder(.035,.05,h,0x9aa5c5,x,h/2,z,6);stem.material=mat(0x9aa5c5,.6);let color=choose([0x77f4dd,0xb19aff,0xff8fcb,0x8bc9ff]);const cap=sphere(.13+rand()*.11,color,x,h,z,9);cap.scale.set(1,.65,1);cap.material.emissive=new THREE.Color(color);cap.material.emissiveIntensity=1.05;if(i%5===0)crystal(x,.25+rand()*.2,z,.35,color);}
+ // floating motes as tiny emissive stars
+ for(let i=0;i<45;i++){const color=choose([0xa4fff0,0xc2a5ff,0xffdf9c]);const mote=sphere(.035+rand()*.035,color,(rand()-.5)*34,.7+rand()*3.6,(rand()-.5)*34,6);mote.material.emissive=new THREE.Color(color);mote.material.emissiveIntensity=1.8;mote.userData.floatPhase=rand()*6.28;}
+ // crystal clusters mark hiding places
+ for(let i=0;i<14;i++){let x=choose([-1,1])*(5+rand()*12),z=(rand()-.5)*28;crystal(x,.65+rand()*.2,z,.55+rand()*.7,choose([0x69e6d1,0x9e86ff,0x7abfff]));hidingSpots.push({x,z,color:0x385e69,radius:1.7});}
+ // moon disc and halo
+ const moon=new THREE.Mesh(new THREE.SphereGeometry(2.1,20,16),new THREE.MeshBasicMaterial({color:0xd8e5ff}));moon.position.set(-13,12,-24);scene.add(moon);const halo=new THREE.Mesh(new THREE.TorusGeometry(2.65,.045,6,64),new THREE.MeshBasicMaterial({color:0x8b9eff,transparent:true,opacity:.75}));halo.position.copy(moon.position);halo.rotation.x=.35;scene.add(halo);
+}
 function buildWorld(si){
- stage=si;const t=themes[stage];scene.clear();worldObjects=[];hidingSpots=[];scene.background=new THREE.Color(t.sky);scene.fog=new THREE.Fog(t.sky,24,64);
+ stage=si;const t=themes[stage];scene.clear();worldObjects=[];hidingSpots=[];
+ if(t.style==='fantasy'){buildFantasyWorld();}else{scene.background=new THREE.Color(t.sky);scene.fog=new THREE.Fog(t.sky,24,64);
  scene.add(new THREE.HemisphereLight(0xe4f5ff,0x645347,2.0));
  const sun=new THREE.DirectionalLight(0xffe4bc,3.1);sun.position.set(-8,15,7);sun.castShadow=true;sun.shadow.mapSize.set(512,512);sun.shadow.camera.left=-26;sun.shadow.camera.right=26;sun.shadow.camera.top=26;sun.shadow.camera.bottom=-26;scene.add(sun);
  ground=new THREE.Mesh(new THREE.PlaneGeometry(54,54,24,24),mat(t.ground));ground.rotation.x=-Math.PI/2;ground.position.y=-.08;ground.receiveShadow=true;scene.add(ground);
  // layered landscape details give the arena more depth and a crafted miniature-world feel
  for(let i=0;i<90;i++){let x=(rand()-.5)*48,z=(rand()-.5)*48;if(Math.abs(x)<5&&Math.abs(z)<5)continue;let rock=sphere(.12+rand()*.2,t.style==='snow'?0xdce8ec:t.style==='beach'?0xe6d3a7:0x8a9a79,x,.02,z,7);rock.scale.set(1.5,.55,1);rock.rotation.y=rand()*Math.PI;rock.castShadow=true;}
+ if(t.style!=='fantasy'){
  // Street layout: central lane, cross lanes, blocks and alley-facing façades.
  box(8,.025,42,0x777873,0,-.045,0);box(42,.025,7,0x777873,0,-.04,0);
  for(let i=-18;i<=18;i+=3){box(.08,.012,.55,0xd8c9a3,i,.0,0);box(.55,.012,.08,0xd8c9a3,0,.0,i)}
@@ -203,6 +238,8 @@ function buildWorld(si){
  }
  // Enchanted garden layer: low clumps, bright flowers, tiny mushrooms and glowing stones.
  for(let i=0;i<76;i++){let x=(rand()-.5)*42,z=(rand()-.5)*42;if(Math.abs(x)<4.8&&Math.abs(z)<4.8)continue;let h=.18+rand()*.38;let leaf=sphere(.12+rand()*.09,t.style==='snow'?0xe8f4f6:t.style==='neon'||t.style==='dark'?0x5bcaad:0x4e945c,x,h*.55,z,7);leaf.scale.set(.75,1.8,.8);leaf.rotation.z=(rand()-.5)*.7;if(i%3===0){cylinder(.025,.035,.18,0x6b593d,x,h+.08,z,6);sphere(.09,choose([0xffd56b,0xff83b4,0x9ce7ff,0xc6a5ff]),x,h+.2,z,8)}if(i%7===0){sphere(.19,t.style==='neon'||t.style==='dark'?0x8b65c9:0xd8d5bd,x,.12,z,8).scale.set(1,.6,1);sphere(.13,0xf2b8dc,x,.27,z,8)}}
+ }
+ }
  player=makePerson(customColor);player.position.set(-1,0,2);applyChameleonColor(player,customColor);loadPaintData(player);
  cpu=makePerson(role==='hide'?0xe6a16c:0x79d4a8);cpu.position.set(2,0,-2);
  applyPattern(player,customPattern);applyPattern(cpu,customPattern);player.visible=true;cpu.visible=true;
@@ -299,8 +336,8 @@ $('inspect').addEventListener('click',inspect);
 $('pausebtn').addEventListener('click',()=>{paused=true;$('pause').classList.remove('hidden')});$('resume').addEventListener('click',()=>{paused=false;$('pause').classList.add('hidden')});
 $('quit').addEventListener('click',()=>{running=false;paused=false;$('pause').classList.add('hidden');$('hud').classList.add('hidden');$('menu').classList.remove('hidden');buildWorld(stage)});
 $('soundtoggle').addEventListener('change',e=>audioOn=e.target.checked);
-$('quality').addEventListener('change',e=>{quality=e.target.value;if(renderer){renderer.setPixelRatio(Math.min(devicePixelRatio||1,quality==='high'?1.5:1));renderer.setSize(innerWidth,innerHeight)}});
-function resize(){if(!camera||!renderer)return;camera.aspect=innerWidth/innerHeight;camera.fov=innerWidth<innerHeight?75:64;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
+$('quality').addEventListener('change',e=>{quality=e.target.value;if(renderer){renderer.setPixelRatio(Math.min(devicePixelRatio||1,innerWidth<700?(quality==='high'?1.5:1.15):1.7));renderer.setSize(innerWidth,innerHeight)}});
+function resize(){if(!camera||!renderer)return;camera.aspect=innerWidth/innerHeight;camera.fov=innerWidth<innerHeight?75:64;camera.updateProjectionMatrix();renderer.setPixelRatio(Math.min(devicePixelRatio||1,innerWidth<700?(quality==='high'?1.5:1.15):1.7));renderer.setSize(innerWidth,innerHeight)}
 addEventListener('resize',resize);
 const joy=$('joystick'),stick=$('stick');let joyId=null,joyRect=null;
 function joyStart(e){e.preventDefault();joyId=e.pointerId;joy.setPointerCapture(joyId);joyRect=joy.getBoundingClientRect();joyMove(e)}
