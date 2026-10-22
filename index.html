@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#101a25">
+<title>カメレオン・ワールド：海辺のリゾート</title>
+<style>
+:root{--glass:rgba(17,19,48,.78);--line:rgba(195,202,255,.22);--mint:#9cf7e4;--gold:#f6d6ff;--ink:#f4f4ff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#171b43;color:var(--ink);font-family:ui-rounded,"Hiragino Kaku Gothic ProN",system-ui,sans-serif;touch-action:none}
+button{font:inherit;color:inherit;border:1px solid var(--line);background:rgba(255,255,255,.08);border-radius:14px;padding:11px 14px;cursor:pointer;touch-action:manipulation}
+button:active{transform:scale(.98)}button.selected{border-color:var(--mint);background:rgba(169,242,208,.17);box-shadow:0 0 0 1px rgba(169,242,208,.25) inset}
+#world{position:fixed;inset:0;width:100%;height:100%;display:block}
+#loading{position:fixed;inset:0;display:grid;place-items:center;background:#101a25;z-index:20}
+.loadcard{padding:26px;text-align:center}.spinner{width:35px;height:35px;border:3px solid #ffffff30;border-top-color:var(--mint);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}@keyframes spin{to{transform:rotate(360deg)}}
+.screen{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(7,14,22,.28),rgba(7,14,22,.76));overflow:auto}
+.hidden{display:none!important}.panel{width:min(820px,100%);max-height:100%;overflow:auto;background:linear-gradient(145deg,rgba(27,30,71,.94),rgba(12,29,54,.94));backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:24px;padding:clamp(16px,3vw,28px);box-shadow:0 24px 80px #0008,0 0 36px #776bff18}
+.eyebrow{letter-spacing:.18em;text-transform:uppercase;font-size:11px;color:var(--mint);font-weight:800;text-shadow:0 0 18px #7bf0d055}
+h1{font-size:clamp(34px,7vw,64px);line-height:1.02;letter-spacing:-.05em;margin:10px 0 12px}h2{font-size:20px;margin:0 0 12px}p{color:#c5d2d9;line-height:1.6;margin:8px 0 16px}.sub{font-size:13px;color:#aab9c2}
+.section{margin-top:19px}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.stage{padding:0;overflow:hidden;text-align:left;min-width:0;border-radius:13px}.thumb{height:70px;position:relative;overflow:hidden;background:linear-gradient(135deg,var(--a),var(--b));display:flex;align-items:center;justify-content:center;font-size:29px}
+.thumb:before{content:"";position:absolute;width:85%;height:26px;bottom:-4px;left:8%;background:#17252b66;transform:skewY(-12deg);border-radius:3px}.thumb span{position:relative;filter:drop-shadow(0 3px 2px #0005)}
+.stage .name{display:block;font-size:12px;padding:8px 8px 9px;line-height:1.3}.stage.selected{border-color:var(--mint);box-shadow:0 0 0 1px var(--mint)}
+.options{display:flex;gap:8px;flex-wrap:wrap}.options button{flex:1;min-width:105px}.primary{background:linear-gradient(120deg,#b4fff0,#9f9aff 60%,#e5aaff);color:#19183a;border:0;font-weight:900;box-shadow:0 8px 26px #65d6b444}.big{width:100%;font-size:17px;padding:15px;margin-top:18px;border-radius:16px}.rowline{display:flex;justify-content:space-between;align-items:center;gap:10px}.rolecard{flex:1;text-align:left;min-height:75px}.rolecard strong{display:block;margin-bottom:4px}.rolecard small{color:#b8c9d0}
+#hud{position:fixed;inset:0;z-index:3;pointer-events:none}.hudtop{position:absolute;top:max(12px,env(safe-area-inset-top));left:12px;right:12px;display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.pill{background:var(--glass);border:1px solid var(--line);border-radius:14px;padding:9px 12px;backdrop-filter:blur(12px);box-shadow:0 4px 18px #0002}.timer{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums}.hudlabel{font-size:10px;color:#a9c0c7;letter-spacing:.1em}.hudmsg{position:absolute;top:24%;left:50%;transform:translateX(-50%);text-align:center;background:#101b24c9;border:1px solid var(--line);padding:10px 16px;border-radius:14px;width:max-content;max-width:88%;font-size:13px}
+#joystick{position:absolute;left:20px;bottom:max(24px,env(safe-area-inset-bottom));width:128px;height:128px;border-radius:50%;background:#14232d9c;border:1px solid #ffffff38;pointer-events:auto;touch-action:none}
+#stick{position:absolute;width:52px;height:52px;left:37px;top:37px;border-radius:50%;background:#b5f3d6dd;border:2px solid #ffffffb0;box-shadow:0 4px 15px #0005}
+#actions{position:absolute;right:16px;bottom:max(24px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:auto}
+.action{width:82px;height:72px;border-radius:22px;background:#14232dcc;border:1px solid #ffffff42;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-weight:800;font-size:12px}
+.action .emoji{font-size:23px}.action:disabled{opacity:.35}
+#tip{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font-size:11px;color:#d7e3e4;background:#0b151cb5;padding:7px 10px;border-radius:99px;white-space:nowrap;max-width:70%;overflow:hidden}
+#result{z-index:8;background:rgba(4,10,15,.72)}#result .panel{text-align:center;max-width:430px}.resulticon{font-size:54px}.resultactions{display:flex;gap:9px}.resultactions button{flex:1}
+#pause{position:fixed;z-index:9;inset:0;background:#061018b8;display:grid;place-items:center;padding:20px}
+@media(max-width:600px){.cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.thumb{height:57px}.stage .name{font-size:11px;padding:7px 5px}.panel{border-radius:20px}.screen{justify-content:flex-start;padding-top:max(16px,env(safe-area-inset-top))}.titlepanel{margin:auto 0}.hudmsg{top:22%}#joystick{width:116px;height:116px}#stick{left:32px;top:32px}.action{width:73px;height:67px}}
+@media(orientation:landscape) and (max-height:500px){.screen{padding:10px;justify-content:center}.panel{padding:14px 20px}.cards{grid-template-columns:repeat(6,minmax(0,1fr))}.thumb{height:42px}.stage .name{font-size:10px;padding:5px}.section{margin-top:10px}h1{font-size:34px}.big{margin-top:10px;padding:10px}.hudmsg{top:19%}}
+
+#paintScreen{z-index:7;background:linear-gradient(180deg,rgba(7,14,22,.16),rgba(7,14,22,.82));}
+.paintpanel{width:min(520px,100%);background:rgba(10,24,31,.91);border:1px solid #ffffff35;border-radius:24px;padding:20px;box-shadow:0 20px 70px #0008;backdrop-filter:blur(14px)}
+.palette{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin:14px 0}.swatch{aspect-ratio:1;border-radius:50%;padding:0;border:3px solid #ffffff55;min-width:0}.swatch.selected{outline:3px solid #fff;outline-offset:2px;box-shadow:0 0 0 5px #0006}
+.patterns{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.pattern{padding:10px 4px;font-size:12px}.paintnote{font-size:12px;color:#b7cbd0;line-height:1.5}.brushrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}.brushrow button{padding:9px 12px}.paintstage{position:relative;height:210px;border-radius:18px;overflow:hidden;border:1px solid #ffffff2a;background:linear-gradient(#9dd8d2,#e1d6a5 68%,#526b4a);margin:12px 0}.paintstage:before{content:"✦   ☁       ☁";position:absolute;inset:14px 18px;color:#ffffffa0;letter-spacing:2em;font-size:18px}.paintstage canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}.paintbadge{position:absolute;z-index:1;bottom:8px;left:10px;font-size:11px;background:#10231dc9;border-radius:99px;padding:6px 9px}.paintpanel{max-height:100%;overflow:auto}
+@media(max-width:600px){.paintpanel{padding:16px}.palette{gap:7px}}
+</style>
+</head>
+<body>
+<canvas id="world"></canvas>
+<div id="loading"><div class="loadcard"><div class="spinner"></div><b>カメレオン・ワールド</b><p id="loadtext">3Dワールドを準備中…</p></div></div>
+<div id="menu" class="screen hidden">
+ <div class="panel titlepanel">
+  <div class="eyebrow">HIDE · SEEK · BLEND IN</div>
+  <h1>カメレオン・<br>ワールド<span style="color:var(--mint)">.</span></h1>
+  <p>星明かりの森に溶け込め。小さな違和感を見逃すな。<br>魔法の世界で、CPUとかくれんぼ。</p>
+  <div class="section"><div class="rowline"><h2>01　ステージを選ぶ</h2><span class="sub" id="stagecount">01 / 12</span></div><div id="stages" class="cards"></div></div>
+  <div class="section"><h2>02　難易度</h2><div class="options" id="difficulties">
+   <button data-diff="0" class="selected"><strong>EASY</strong><br><small>ゆったり</small></button><button data-diff="1"><strong>NORMAL</strong><br><small>標準</small></button><button data-diff="2"><strong>HARD</strong><br><small>鋭い観察</small></button><button data-diff="3"><strong>EXPERT</strong><br><small>短期決戦</small></button>
+  </div></div>
+  <div class="section"><h2>03　あなたの役割</h2><div class="options" id="roles">
+   <button class="rolecard selected" data-role="hide"><strong>🦎 隠れる側</strong><small>擬態して時間を稼ぐ</small></button><button class="rolecard" data-role="seek"><strong>🔎 探す側</strong><small>怪しい場所を調査する</small></button>
+  </div></div>
+  <button id="paintOpen" class="big">🎨 カメレオンをペイント</button><button id="start" class="primary big">ゲームスタート　→</button>
+  <div class="sub" style="text-align:center;margin-top:10px">横画面推奨 · タッチ操作 · 1人用CPU対戦</div>
+ </div>
+</div>
+<div id="paintScreen" class="screen hidden"><div class="paintpanel">
+ <div class="eyebrow">CUSTOMIZE YOUR CHAMELEON</div><h1 style="font-size:32px">自分だけの色にしよう 🎨</h1>
+ <p>色を選んで、カメレオンの体を指でなぞってみよう。デザインは保存されるよ。</p>
+ <div class="paintstage"><canvas id="paintCanvas"></canvas><span class="paintbadge">指でなぞってペイント · 2本指ではなく1本指で</span></div>
+ <div class="brushrow"><strong>ブラシ</strong><button data-brush="8" class="selected">細め</button><button data-brush="16">ふつう</button><button data-brush="28">太め</button><button id="paintUndo">↶ 1手戻す</button><button id="paintClear">消去</button></div>
+ <h2>① 体の色</h2><div class="palette" id="paintPalette"></div>
+ <h2>② 模様</h2><div class="patterns" id="paintPatterns"><button class="pattern selected" data-pattern="plain">なし</button><button class="pattern" data-pattern="spots">水玉</button><button class="pattern" data-pattern="stripes">しま模様</button><button class="pattern" data-pattern="stars">星柄</button></div>
+ <p class="paintnote">塗った模様はカメレオンの表面に反映され、次回も保存されるよ。ブラシで描いた模様は3Dモデルの表面に貼り付くテクスチャ方式です。</p>
+ <button id="paintSave" class="primary big">このデザインで遊ぶ</button><button id="paintCancel" class="big">戻る</button>
+ </div></div>
+<div id="hud" class="hidden">
+ <div class="hudtop"><div class="pill"><div class="hudlabel" id="rolelabel">HIDER</div><div style="font-weight:800" id="stagenamehud">日本の路地裏</div></div><div class="pill" style="text-align:right"><div class="hudlabel">TIME LEFT</div><div class="timer" id="timer">01:30</div></div><button id="pausebtn" style="pointer-events:auto;padding:10px 12px">Ⅱ</button></div>
+ <div class="hudmsg" id="message">隠れ場所を探そう</div>
+ <div id="joystick"><div id="stick"></div></div>
+ <div id="actions"><button class="action" id="blend"><span class="emoji">🍃</span><span>擬態する</span></button><button class="action" id="inspect"><span class="emoji">◎</span><span>調査する</span></button></div>
+ <div id="tip">左で移動 · 右側をドラッグして視点変更</div>
+</div>
+<div id="result" class="screen hidden"><div class="panel"><div class="resulticon" id="resulticon">🏆</div><div class="eyebrow">ROUND COMPLETE</div><h1 id="resulttitle" style="font-size:38px">見つからなかった！</h1><p id="resulttext">見事な擬態でした。</p><div class="resultactions"><button id="again" class="primary">もう一度</button><button id="backmenu">ステージ選択</button></div></div></div>
+<div id="pause" class="hidden"><div class="panel" style="max-width:360px;text-align:center"><h2>ひと休み</h2><p>世界はそのまま待っています。</p><button id="resume" class="primary big">ゲームに戻る</button><button id="quit" class="big">タイトルへ戻る</button><div style="margin-top:14px"><label><input type="checkbox" id="soundtoggle" checked> サウンド</label>　<label>画質 <select id="quality"><option value="low">軽量</option><option value="high">高画質</option></select></label></div></div></div>
+<div id="error" class="screen hidden"><div class="panel"><h2>3Dワールドを読み込めませんでした</h2><p id="errortext">インターネット接続を確認してください。</p><button onclick="location.reload()" class="primary big">再読み込み</button></div></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const themes=[
+{name:'月光の魔法森',emoji:'🌙',a:'#342c69',b:'#73e8dc',sky:0x171b43,ground:0x243d4d,wall:0x514c83,accent:0x70f0d1,items:['月晶','光るキノコ','星の花'],style:'fantasy'},
+{name:'東京ネオン街',emoji:'🌃',a:'#322b62',b:'#ef5c92',sky:0x34375c,ground:0x34384b,wall:0x45465f,accent:0xff4f9a,items:['ネオン看板','自販機','配電箱'],style:'neon'},
+{name:'京都の古い街並み',emoji:'⛩️',a:'#7a4e3b',b:'#d5b88a',sky:0xb6c8d0,ground:0x8a8270,wall:0xb8a38a,accent:0x6f3d35,items:['石灯籠','竹','木塀'],style:'kyoto'},
+{name:'渋谷風スクランブル',emoji:'🚦',a:'#546878',b:'#e3b66f',sky:0xa9c3d0,ground:0x535b60,wall:0x89949a,accent:0xe6c85c,items:['街灯','広告板','植栽'],style:'city'},
+{name:'欧州の石畳',emoji:'🏘️',a:'#6d8a91',b:'#d8a875',sky:0xb5c9d1,ground:0x777d7c,wall:0xd6bda0,accent:0x9d5b4d,items:['街路灯','樽','花箱'],style:'europe'},
+{name:'熱帯のジャングル',emoji:'🌴',a:'#164e3b',b:'#91b65b',sky:0x8fc5b1,ground:0x365b3a,wall:0x526d46,accent:0xc6a65a,items:['大岩','シダ','丸太'],style:'jungle'},
+{name:'雪山と山小屋',emoji:'❄️',a:'#9abbd1',b:'#e7f1f4',sky:0xbdd5e3,ground:0xd4e0e4,wall:0x7c8d96,accent:0x76594b,items:['薪束','雪だるま','岩'],style:'snow'},
+{name:'海辺のリゾート',emoji:'🏖️',a:'#3f9fa9',b:'#e8c88e',sky:0x9adbe3,ground:0xd5c28f,wall:0xf1dfbd,accent:0x3e9b9c,items:['パラソル','サーフボード','植木'],style:'beach'},
+{name:'幻想の和風城',emoji:'🏯',a:'#483b68',b:'#d8a76d',sky:0x8a9eb8,ground:0x65715f,wall:0xd4c5a6,accent:0x9c4349,items:['石灯籠','桜の木','屏風'],style:'castle'},
+{name:'無限城の回廊',emoji:'🌙',a:'#211e3a',b:'#76548c',sky:0x282a49,ground:0x393448,wall:0x5d4b69,accent:0xa95d8e,items:['紫の灯','石柱','古い壺'],style:'dark'},
+{name:'巨大な要塞都市',emoji:'🧱',a:'#555d67',b:'#b38e69',sky:0x9aaab2,ground:0x626c70,wall:0x9b9a8b,accent:0x8c5948,items:['砦の箱','盾飾り','樽'],style:'fort'},
+{name:'ちいさな商店街',emoji:'🧸',a:'#e6a46c',b:'#9bc9b5',sky:0xb8d9dc,ground:0xb5a18b,wall:0xf0d8ad,accent:0xe57f72,items:['おもちゃ箱','カフェ看板','商品棚'],style:'toy'}
+];
+const diffs=[{name:'EASY',time:110,speed:.85,detect:4.1,hint:13},{name:'NORMAL',time:90,speed:1,detect:3.1,hint:18},{name:'HARD',time:72,speed:1.22,detect:2.45,hint:25},{name:'EXPERT',time:55,speed:1.42,detect:1.9,hint:33}];
+let customColor=Number(localStorage.getItem('cwColor')||'0x73d6ad'),customPattern=localStorage.getItem('cwPattern')||'spots',paintYaw=0,stage=0,diff=0,role='hide',scene,camera,renderer,clock,player,cpu,ground,worldObjects=[],hidingSpots=[],seed=1,running=false,paused=false,elapsed=0,timeLeft=90,prep=5,blendOn=false,gameOver=false,lastHint=0,seekTarget=null,move={x:0,y:0},yaw=0,pitch=-.14,lookPointer=null,raf=0,quality='low',audioOn=true,audioCtx=null;
+const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+const choose=a=>a[Math.floor(rand()*a.length)];
+function showError(msg){$('loading').classList.add('hidden');$('error').classList.remove('hidden');$('errortext').textContent=msg}
+function init3D(){
+ if(!window.THREE){showError('Three.jsを読み込めません。ネット接続を確認して、もう一度お試しください。');return}
+ try{scene=new THREE.Scene();scene.background=new THREE.Color(themes[7].sky);scene.fog=new THREE.Fog(themes[7].sky,22,62);
+ camera=new THREE.PerspectiveCamera(64,innerWidth/innerHeight,.1,120);
+ renderer=new THREE.WebGLRenderer({canvas:$('world'),antialias:innerWidth>700,alpha:false,powerPreference:'high-performance'});
+ quality=innerWidth<700?'low':'high';renderer.setPixelRatio(Math.min(devicePixelRatio||1,innerWidth<700?1.25:1.65));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+ renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
+ clock=new THREE.Clock();buildWorld(7);stage=7;animate();$('loading').classList.add('hidden');$('menu').classList.remove('hidden');
+ }catch(e){showError('この端末では3D表示を開始できませんでした。ページを再読み込みしてください。')}
+}
+function mat(color,rough=.9,metal=0){return new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal})}
+function box(w,h,d,color,x,y,z,opts={}){let mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color,opts.rough??.9,opts.metal??0));mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);worldObjects.push(mesh);return mesh}
+function cylinder(r1,r2,h,color,x,y,z,segments=7){let m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,segments),mat(color));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);worldObjects.push(m);return m}
+function sphere(r,color,x,y,z,segments=8){let m=new THREE.Mesh(new THREE.SphereGeometry(r,segments,6),mat(color));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);worldObjects.push(m);return m}
+let paintCanvas2D=null,paintTexture=null,brushSize=16,paintHistory=[],paintRaycaster=null,paintNdc=null;
+function makePaintTexture(color){
+ const c=document.createElement('canvas');c.width=512;c.height=256;const x=c.getContext('2d');x.fillStyle='#ffffff';x.fillRect(0,0,c.width,c.height);
+ const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;tex.needsUpdate=true;return {canvas:c,ctx:x,texture:tex};
+}
+function loadPaintData(actor){const data=localStorage.getItem('cwPaintTexture');if(!data||!actor?.userData.skin)return;const img=new Image();img.onload=()=>{const c=actor.userData.paintCanvas;if(!c)return;const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);actor.userData.paintTexture.needsUpdate=true};img.src=data}
+function makePerson(color=customColor){
+ const g=new THREE.Group(),skin=mat(color,.62),dark=mat(0x244c42,.8),eyeWhite=mat(0xfff5d9,.28),pupil=mat(0x14252b,.2),belly=mat(new THREE.Color(color).multiplyScalar(.72),.72);
+ const pt=makePaintTexture(color);skin.map=pt.texture;skin.transparent=false;skin.needsUpdate=true;
+ // Rounded, friendly chameleon body instead of blocky humanoid parts
+ const torso=new THREE.Mesh(new THREE.SphereGeometry(.58,20,14),skin);torso.scale.set(1.12,.72,1.42);torso.position.set(0,.83,0);g.add(torso);
+ const chest=new THREE.Mesh(new THREE.SphereGeometry(.42,16,12),belly);chest.scale.set(.92,.7,.7);chest.position.set(0,.68,-.28);g.add(chest);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.42,20,14),skin);head.scale.set(1.08,.88,1.12);head.position.set(0,1.26,-.55);g.add(head);
+ for(const side of [-1,1]){
+  const bump=new THREE.Mesh(new THREE.SphereGeometry(.19,14,10),skin);bump.position.set(side*.32,1.48,-.55);g.add(bump);
+  const white=new THREE.Mesh(new THREE.SphereGeometry(.145,14,10),eyeWhite);white.position.set(side*.34,1.48,-.69);g.add(white);
+  const black=new THREE.Mesh(new THREE.SphereGeometry(.075,12,8),pupil);black.position.set(side*.35,1.48,-.81);g.add(black);
+  const glint=new THREE.Mesh(new THREE.SphereGeometry(.026,8,6),mat(0xffffff,.15));glint.position.set(side*.37,1.53,-.86);g.add(glint);
+  for(const [x,z] of [[side*.34,-.05],[side*.32,.24]]){const leg=new THREE.Mesh(new THREE.SphereGeometry(.16,12,8),skin);leg.scale.set(.72,.65,1.1);leg.position.set(x,.38,z);g.add(leg);const foot=new THREE.Mesh(new THREE.SphereGeometry(.13,12,8),skin);foot.scale.set(1.3,.55,1.5);foot.position.set(x,.18,z-.1);g.add(foot)}
+ }
+ // Curled tail made from overlapping segments
+ let prev=new THREE.Vector3(0,.8,.46);for(let i=0;i<12;i++){let a=i/11*Math.PI*1.8;let radius=.38*(1-i/13);let pt=new THREE.Vector3(Math.sin(a)*radius,.72+Math.sin(a*.8)*.14,.48+Math.cos(a)*radius);const seg=new THREE.Mesh(new THREE.SphereGeometry(.105*(1-i/16),10,8),skin);seg.position.copy(pt);g.add(seg);prev=pt}
+ // tiny crest bumps
+ for(let i=0;i<5;i++){const spike=new THREE.Mesh(new THREE.SphereGeometry(.075,8,6),dark);spike.scale.set(.65,1.25,.65);spike.position.set(0,1.65-i*.055,-.52+i*.18);g.add(spike)}
+ g.userData.baseColor=color;g.userData.body=torso;g.userData.head=head;g.userData.skin=skin;g.userData.paintCanvas=pt.canvas;g.userData.paintCtx=pt.ctx;g.userData.paintTexture=pt.texture;g.userData.belly=belly;g.userData.patternGroup=new THREE.Group();g.add(g.userData.patternGroup);applyPattern(g,customPattern);
+ scene.add(g);return g
+}
+function applyPattern(actor,pattern){
+ if(!actor||!actor.userData.patternGroup)return;const group=actor.userData.patternGroup;while(group.children.length){const o=group.children.pop();o.geometry?.dispose();if(o.material&&!Array.isArray(o.material))o.material.dispose()}
+ if(pattern==='plain')return;const c=pattern==='stars'?0xffdf70:pattern==='stripes'?0xf5f3ce:0x183f50;
+ if(pattern==='spots'){for(let i=0;i<16;i++){const a=i*2.399,r=.25+(i%3)*.06;const dot=new THREE.Mesh(new THREE.SphereGeometry(.055,8,6),mat(c,.55));dot.position.set(Math.cos(a)*r,.82+(i%4)*.13,Math.sin(a)*.42-.03);group.add(dot)}}
+ else if(pattern==='stripes'){for(let i=0;i<4;i++){const band=new THREE.Mesh(new THREE.TorusGeometry(.48-i*.035,.035,5,18),mat(c,.6));band.rotation.x=Math.PI/2;band.position.set(0,.7+i*.13,0);group.add(band)}}
+ else if(pattern==='stars'){for(let i=0;i<7;i++){const star=new THREE.Mesh(new THREE.OctahedronGeometry(.085),mat(c,.4,.1));star.position.set(Math.sin(i*2.4)*.34,.72+(i%3)*.18,Math.cos(i*2.4)*.35);group.add(star)}}
+}
+function applyChameleonColor(actor,color){if(!actor)return;actor.traverse(o=>{if(o.isMesh&&o.material&&o.material.color&&o.material!==actor.userData.belly){if(o.material===actor.userData.skin||o.material.color.getHex()===actor.userData.baseColor)o.material.color.setHex(color)}});actor.userData.baseColor=color;actor.userData.skin.color.setHex(color);if(actor.userData.body)actor.userData.body.material.color.setHex(color);if(actor.userData.head)actor.userData.head.material.color.setHex(color);if(actor.userData.belly)actor.userData.belly.color.setHex(new THREE.Color(color).multiplyScalar(.72))}
+
+function makeProp(style,x,z,scale=1){
+ const t=themes[stage],r=rand();
+ let obj,base=t.wall,accent=t.accent;
+ const kind=Math.floor(rand()*5);
+ if(style==='jungle'||style==='beach'||style==='snow'){
+   if(kind===0){obj=box(.9*scale,.6*scale,.75*scale,style==='snow'?0x9caeb4:style==='beach'?0xe3d2b1:0x776a4d,x,.3*scale,z)}
+   else if(kind===1){cylinder(.18*scale,.28*scale,.55*scale,style==='snow'?0xe7eef0:0x476e42,x,.28*scale,z);sphere(.48*scale,style==='snow'?0xeaf4f5:0x36774d,x,.75*scale,z)}
+   else{cylinder(.07*scale,.11*scale,.8*scale,style==='snow'?0x879ba7:0x6c563c,x,.4*scale,z);sphere(.3*scale,style==='snow'?0xf2f6f8:0x4b8855,x,.9*scale,z)}
+ }else if(kind===0){box(.8*scale,.65*scale,.65*scale,accent,x,.32*scale,z);box(.84*scale,.09*scale,.69*scale,base,x,.55*scale,z)}
+ else if(kind===1){cylinder(.22*scale,.27*scale,.55*scale,base,x,.28*scale,z,8);cylinder(.23*scale,.23*scale,.06*scale,accent,x,.56*scale,z,8)}
+ else if(kind===2){cylinder(.05*scale,.07*scale,1.25*scale,0x594b3e,x,.62*scale,z,6);box(.48*scale,.38*scale,.12*scale,accent,x,.95*scale,z)}
+ else if(kind===3){cylinder(.09*scale,.12*scale,.7*scale,0x715943,x,.35*scale,z,7);sphere(.38*scale,0x4c8055,x,.82*scale,z)}
+ else{box(.55*scale,.95*scale,.35*scale,base,x,.47*scale,z);box(.59*scale,.13*scale,.39*scale,accent,x,.88*scale,z)}
+ hidingSpots.push({x,z,color:kind%2?accent:base,mesh:obj||null,radius:1.5*scale});
+}
+function crystal(x,y,z,scale=1,color=0x73e8dc){
+ const glow=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:1.25,roughness:.22,metalness:.12});
+ const mesh=new THREE.Mesh(new THREE.OctahedronGeometry(.55*scale,0),glow);mesh.scale.set(.72,1.7,.72);mesh.position.set(x,y,z);mesh.rotation.y=rand()*Math.PI;mesh.castShadow=true;scene.add(mesh);worldObjects.push(mesh);
+ const light=new THREE.PointLight(color,.8*scale,4.5*scale,2);light.position.set(x,y+.25*scale,z);scene.add(light);return mesh;
+}
+function fantasyTree(x,z,scale=1){
+ const trunk=cylinder(.12*scale,.2*scale,1.4*scale,0x4a3b62,x,.7*scale,z,7);trunk.rotation.z=(rand()-.5)*.16;
+ for(let j=0;j<3;j++){const crown=sphere((.58-j*.07)*scale,[0x254f65,0x2c6b72,0x3b657e][j],x+(rand()-.5)*.24*scale,1.35*scale+j*.38*scale,z+(rand()-.5)*.22*scale,10);crown.scale.set(1.05,.8,1);}
+ if(rand()>.3)crystal(x+(rand()-.5)*.8*scale,.45*scale,z+.25*scale, .28*scale,choose([0x7ef3d8,0xb29aff,0x6bbcff]));
+}
+function buildFantasyWorld(){
+ // Twilight sky, moonlit moss and a winding crystal path.
+ scene.background=new THREE.Color(0x171b43);scene.fog=new THREE.FogExp2(0x24294f,.018);
+ scene.add(new THREE.HemisphereLight(0x9edfff,0x17233c,1.25));
+ const moonLight=new THREE.DirectionalLight(0xc5d8ff,2.15);moonLight.position.set(-7,14,-5);moonLight.castShadow=true;moonLight.shadow.mapSize.set(768,768);moonLight.shadow.camera.left=-25;moonLight.shadow.camera.right=25;moonLight.shadow.camera.top=25;moonLight.shadow.camera.bottom=-25;scene.add(moonLight);
+ const warm=new THREE.PointLight(0x7c6cff,1.7,28);warm.position.set(0,5,-7);scene.add(warm);
+ const floorMat=mat(0x294554,.96);const floor=new THREE.Mesh(new THREE.PlaneGeometry(58,58,36,36),floorMat);floor.rotation.x=-Math.PI/2;floor.position.y=-.1;floor.receiveShadow=true;scene.add(floor);
+ // broad mossy islands and stepping stones create layered depth
+ for(let i=0;i<38;i++){let x=(rand()-.5)*44,z=(rand()-.5)*44;if(Math.abs(x)<3.5&&Math.abs(z)<3.5)continue;let r=.45+rand()*1.3;const rock=sphere(r,choose([0x344e60,0x3b5961,0x514b72]),x,.03+rand()*.08,z,9);rock.scale.set(1.35,.35+rand()*.2,1);}
+ for(let i=0;i<42;i++){let z=14-i*.68,x=Math.sin(i*.32)*2.6+(rand()-.5)*1.2;const stone=new THREE.Mesh(new THREE.CylinderGeometry(.35+rand()*.2,.45,.12,6),mat(choose([0x8a91b7,0x697fa4,0x5d8b9c]),.72,.08));stone.position.set(x,.02,z);stone.rotation.y=rand()*Math.PI;scene.add(stone);}
+ // arching ancient ruins on the edge of the glade
+ for(let side of [-1,1]){for(let i=0;i<3;i++){let x=side*(8+i*4),z=-9-(i%2)*5;const pillar=box(.65,3.5,.7,0x4d4b78,x,1.75,z);pillar.rotation.z=side*.04;box(1.1,.3,.95,0x7774a8,x,3.55,z);crystal(x,4.05,z,.45,0x9b82ff)}}
+ // magical trees around the playable clearing
+ for(let i=0;i<34;i++){let x=(rand()-.5)*42,z=(rand()-.5)*42;if(Math.abs(x)<5.4&&Math.abs(z)<5.4)continue;fantasyTree(x,z,.75+rand()*.8)}
+ // glowing mushrooms and star flowers
+ for(let i=0;i<76;i++){let x=(rand()-.5)*38,z=(rand()-.5)*38;if(Math.abs(x)<4.5&&Math.abs(z)<4.5)continue;let h=.18+rand()*.35;const stem=cylinder(.035,.05,h,0x9aa5c5,x,h/2,z,6);stem.material=mat(0x9aa5c5,.6);let color=choose([0x77f4dd,0xb19aff,0xff8fcb,0x8bc9ff]);const cap=sphere(.13+rand()*.11,color,x,h,z,9);cap.scale.set(1,.65,1);cap.material.emissive=new THREE.Color(color);cap.material.emissiveIntensity=1.05;if(i%5===0)crystal(x,.25+rand()*.2,z,.35,color);}
+ // floating motes as tiny emissive stars
+ for(let i=0;i<45;i++){const color=choose([0xa4fff0,0xc2a5ff,0xffdf9c]);const mote=sphere(.035+rand()*.035,color,(rand()-.5)*34,.7+rand()*3.6,(rand()-.5)*34,6);mote.material.emissive=new THREE.Color(color);mote.material.emissiveIntensity=1.8;mote.userData.floatPhase=rand()*6.28;}
+ // crystal clusters mark hiding places
+ for(let i=0;i<14;i++){let x=choose([-1,1])*(5+rand()*12),z=(rand()-.5)*28;crystal(x,.65+rand()*.2,z,.55+rand()*.7,choose([0x69e6d1,0x9e86ff,0x7abfff]));hidingSpots.push({x,z,color:0x385e69,radius:1.7});}
+ // moon disc and halo
+ const moon=new THREE.Mesh(new THREE.SphereGeometry(2.1,20,16),new THREE.MeshBasicMaterial({color:0xd8e5ff}));moon.position.set(-13,12,-24);scene.add(moon);const halo=new THREE.Mesh(new THREE.TorusGeometry(2.65,.045,6,64),new THREE.MeshBasicMaterial({color:0x8b9eff,transparent:true,opacity:.75}));halo.position.copy(moon.position);halo.rotation.x=.35;scene.add(halo);
+}
+function buildWorld(si){
+ stage=si;const t=themes[stage];scene.clear();worldObjects=[];hidingSpots=[];
+ if(t.style==='fantasy'){buildFantasyWorld();}else{scene.background=new THREE.Color(t.sky);scene.fog=new THREE.Fog(t.sky,24,64);
+ scene.add(new THREE.HemisphereLight(0xe4f5ff,0x645347,2.0));
+ const sun=new THREE.DirectionalLight(0xffe4bc,3.1);sun.position.set(-8,15,7);sun.castShadow=true;sun.shadow.mapSize.set(512,512);sun.shadow.camera.left=-26;sun.shadow.camera.right=26;sun.shadow.camera.top=26;sun.shadow.camera.bottom=-26;scene.add(sun);
+ ground=new THREE.Mesh(new THREE.PlaneGeometry(54,54,24,24),mat(t.ground));ground.rotation.x=-Math.PI/2;ground.position.y=-.08;ground.receiveShadow=true;scene.add(ground);
+ // layered landscape details give the arena more depth and a crafted miniature-world feel
+ for(let i=0;i<90;i++){let x=(rand()-.5)*48,z=(rand()-.5)*48;if(Math.abs(x)<5&&Math.abs(z)<5)continue;let rock=sphere(.12+rand()*.2,t.style==='snow'?0xdce8ec:t.style==='beach'?0xe6d3a7:0x8a9a79,x,.02,z,7);rock.scale.set(1.5,.55,1);rock.rotation.y=rand()*Math.PI;rock.castShadow=true;}
+ if(t.style!=='fantasy'){
+ // Street layout: central lane, cross lanes, blocks and alley-facing façades.
+ box(8,.025,42,0x777873,0,-.045,0);box(42,.025,7,0x777873,0,-.04,0);
+ for(let i=-18;i<=18;i+=3){box(.08,.012,.55,0xd8c9a3,i,.0,0);box(.55,.012,.08,0xd8c9a3,0,.0,i)}
+ // perimeter and irregular building blocks leave corridors open
+ const blocks=[[-12,-12,7,7],[-4,-13,5,6],[7,-13,8,6],[14,-7,5,6],[-14,1,5,7],[-10,13,8,6],[1,13,7,6],[12,12,8,7],[-16,-5,3,4],[17,3,3,7]];
+ for(const [x,z,w,d] of blocks){
+  let h=2.5+rand()*3.5;let col=t.wall;
+  box(w,h,d,col,x,h/2,z);
+  // roof cap, front door and colored window details
+  box(w+.12,.18,d+.12,t.accent,x,h+.08,z);
+  const front=z>0?-1:1;
+  for(let k=0;k<Math.max(1,Math.floor(w/2));k++){box(.42,.52,.055,0x35515b,x-w/2+.9+k*1.35,h*.62,z+front*(d/2+.03))}
+  box(.62,.95,.09,0x4b382e,x,h*.23,z+front*(d/2+.05));
+  if(rand()>.45)box(w*.45,.13,.22,0xdec58e,x,h*.78,z+front*(d/2+.16));
+ }
+ // stage signature landmarks
+ if(['japan','kyoto','castle'].includes(t.style)){for(let i=0;i<5;i++){cylinder(.05,.05,1.8,0x4a4035,-5+i*2,.9,-3,6);sphere(.22,t.accent,-5+i*2,1.9,-3,7)}}
+ if(t.style==='neon'||t.style==='city'){for(let i=0;i<7;i++){box(.15,2.8,.15,0x434d5b,-3+i,1.4,-7);box(.6,.7,.1,t.accent,-3+i,2.1,-7.1,{metal:.2})}}
+ if(t.style==='castle'||t.style==='dark'||t.style==='fort'){for(let i=0;i<6;i++){box(1.2,3,.9,t.wall,-15+i*6,1.5,-19);box(1.35,.35,1.05,t.accent,-15+i*6,3.1,-19)}}
+ if(t.style==='beach'){let water=new THREE.Mesh(new THREE.PlaneGeometry(15,18),new THREE.MeshStandardMaterial({color:0x319da9,roughness:.28,metalness:.1,transparent:true,opacity:.9}));water.rotation.x=-Math.PI/2;water.position.set(18,-.01,-15);scene.add(water)}
+ for(let i=0;i<48;i++){let x=(rand()-.5)*38,z=(rand()-.5)*38;if(Math.abs(x)<5&&Math.abs(z)<5)continue;makeProp(t.style,x,z,.65+rand()*.7)}
+ // decorative lanterns / trees
+ for(let i=0;i<10;i++){let x=(rand()-.5)*34,z=(rand()-.5)*34;if(Math.abs(x)<5&&Math.abs(z)<5)continue;
+ if(t.style==='jungle'||t.style==='beach'||rand()>.45){cylinder(.09,.14,1.1,0x6b503b,x,.55,z);sphere(.5,t.style==='snow'?0xf0f4f4:t.style==='jungle'?0x276747:0x4d8054,x,1.25,z)}
+ }
+ // Enchanted garden layer: low clumps, bright flowers, tiny mushrooms and glowing stones.
+ for(let i=0;i<76;i++){let x=(rand()-.5)*42,z=(rand()-.5)*42;if(Math.abs(x)<4.8&&Math.abs(z)<4.8)continue;let h=.18+rand()*.38;let leaf=sphere(.12+rand()*.09,t.style==='snow'?0xe8f4f6:t.style==='neon'||t.style==='dark'?0x5bcaad:0x4e945c,x,h*.55,z,7);leaf.scale.set(.75,1.8,.8);leaf.rotation.z=(rand()-.5)*.7;if(i%3===0){cylinder(.025,.035,.18,0x6b593d,x,h+.08,z,6);sphere(.09,choose([0xffd56b,0xff83b4,0x9ce7ff,0xc6a5ff]),x,h+.2,z,8)}if(i%7===0){sphere(.19,t.style==='neon'||t.style==='dark'?0x8b65c9:0xd8d5bd,x,.12,z,8).scale.set(1,.6,1);sphere(.13,0xf2b8dc,x,.27,z,8)}}
+ }
+ }
+ // Beach resort art pass: replace the generic road look with sand, lagoon and recognizable tropical landmarks.
+ if(t.style==='beach'){
+   // Warm sand blanket hides the generic street markings while keeping buildings and props above it.
+   const sand=new THREE.Mesh(new THREE.PlaneGeometry(58,58),new THREE.MeshStandardMaterial({color:0xf0d6a0,roughness:1}));sand.rotation.x=-Math.PI/2;sand.position.set(0,.035,0);sand.receiveShadow=true;scene.add(sand);
+   // Shallow turquoise lagoon along the eastern edge, with a pale surf line.
+   const seaMat=new THREE.MeshStandardMaterial({color:0x20b9c2,roughness:.24,metalness:.08,transparent:true,opacity:.94,emissive:0x063b46,emissiveIntensity:.18});
+   const sea=new THREE.Mesh(new THREE.PlaneGeometry(19,58),seaMat);sea.rotation.x=-Math.PI/2;sea.position.set(20,.055,0);scene.add(sea);
+   const surf=new THREE.Mesh(new THREE.PlaneGeometry(.8,58),new THREE.MeshStandardMaterial({color:0xfff7db,roughness:.45,transparent:true,opacity:.8}));surf.rotation.x=-Math.PI/2;surf.position.set(10.3,.065,0);scene.add(surf);
+   // Subtle shallow-water bands and shoreline pebbles.
+   for(let i=0;i<7;i++){const band=new THREE.Mesh(new THREE.PlaneGeometry(1.1,58),new THREE.MeshStandardMaterial({color:i%2?0x62d9d5:0x42c9cd,roughness:.3,transparent:true,opacity:.28}));band.rotation.x=-Math.PI/2;band.position.set(11.4+i*1.05,.06,0);scene.add(band)}
+   // Distinctive palm trees with bent trunks and layered fronds.
+   for(const [x,z,sc] of [[-15,-12,1.25],[-17,2,1.1],[13,-12,1.25],[15,8,1.15],[4,16,1.0],[-7,17,1.1],[7,-19,1.2]]){
+     const trunk=cylinder(.22*sc,.38*sc,3.1*sc,0x8a5935,x,1.55*sc,z,9);trunk.rotation.z=(x>0?-.09:.1);
+     const crownY=3.05*sc; sphere(.25*sc,0x6a9a43,x,crownY,z,10);
+     for(let j=0;j<7;j++){const a=j*Math.PI*2/7;const frond=box(.16*sc,.09*sc,1.65*sc,choose([0x247a50,0x2e9158,0x4aa65b]),x+Math.cos(a)*.58*sc,crownY+.25*sc,z+Math.sin(a)*.58*sc,{rough:.95});frond.rotation.y=-a;frond.rotation.z=Math.cos(a)*-.34;frond.rotation.x=Math.sin(a)*.3;}
+     if(rand()>.45)for(let k=0;k<2;k++)sphere(.13*sc,0x9b7137,x+.22*sc,crownY-.25*sc,z+.12*sc+k*.18*sc,8);
+   }
+   // Tropical bungalows: colorful plaster, timber trim, thatched roof, veranda and readable doors/windows.
+   const huts=[[-12,-17,4.2,3.4,0xf2a17f,0x9b5540],[-3,-18,4.4,3.5,0x7ccfc2,0x397e79],[6,-10,4.1,3.2,0xf2d17f,0x9b7342],[-14,10,4.2,3.3,0xb7a0e8,0x65518e],[2,12,4.5,3.5,0xffb7c8,0xa35b78]];
+   for(const [x,z,w,d,wcol,rcol] of huts){
+     box(w,2.35,d,wcol,x,1.18,z);
+     // timber corner posts and horizontal beams
+     for(const side of [-1,1]){box(.13,2.5,.15,rcol,x+side*(w/2-.12),1.25,z-d/2-.08);box(.13,2.5,.15,rcol,x+side*(w/2-.12),1.25,z+d/2+.08)}
+     box(w+.22,.14,.16,rcol,x,2.18,z-d/2-.1);box(w+.22,.14,.16,rcol,x,2.18,z+d/2+.1);
+     // two sloping roof planes create a gabled tropical roof
+     const roof1=box(w+.65,.18,d*.62,rcol,x,2.62,z-d*.18);roof1.rotation.x=-.22;roof1.rotation.z=.18;
+     const roof2=box(w+.65,.18,d*.62,rcol,x,2.62,z+d*.18);roof2.rotation.x=.22;roof2.rotation.z=-.18;
+     box(.78,1.45,.09,0x674832,x, .78,z+d/2+.1);
+     for(let wx of [-.95,.95]){box(.68,.62,.1,0xffe8a6,x+wx,1.48,z+d/2+.12);box(.76,.09,.13,rcol,x+wx,1.48,z+d/2+.2);box(.09,.72,.13,rcol,x+wx,1.48,z+d/2+.2)}
+     // painted sign above each entry doubles as a camouflage target
+     box(1.25,.32,.12,choose([0x3f9fa9,0xe77b66,0x755ba8]),x,2.05,z+d/2+.18);
+     hidingSpots.push({x:x+1.1,z:z+d/2+.25,color:wcol,radius:1.7});
+   }
+   // Resort props deliberately use distinct, paintable color blocks.
+   for(let i=0;i<5;i++){const x=-13+i*4.5,z=5+(i%2)*2;const pole=cylinder(.055,.055,2.15,0xf7f0dc,x,1.08,z,8);const canopy=new THREE.Mesh(new THREE.ConeGeometry(1.05,.42,8),mat(i%2?0xff6e82:0x36b9b4));canopy.position.set(x,2.25,z);canopy.rotation.x=Math.PI;scene.add(canopy);box(1.15,.12,1.15,0xe9c68d,x,.08,z);hidingSpots.push({x,z,color:i%2?0xff6e82:0x36b9b4,radius:1.4})}
+   for(let i=0;i<4;i++){const x=-10+i*5,z=1+(i%2)*2;box(1.15,.65,.72,choose([0xd97854,0x3f9fa9,0xf1cf75]),x,.34,z);for(let k=0;k<3;k++)box(.08,.58,.76,0x8c5a3a,x-.35+k*.35,.34,z+.02);hidingSpots.push({x,z,color:0xd97854,radius:1.3})}
+   // Beach grass and flower clumps frame the playable area without filling the center.
+   for(let i=0;i<45;i++){const x=(rand()-.5)*36,z=(rand()-.5)*42;if(Math.abs(x)<4&&Math.abs(z)<5)continue;const h=.18+rand()*.25;const leaf=sphere(.11,choose([0x478b54,0x6aa45d,0x8abf68]),x,h,z,7);leaf.scale.set(.65,1.8,.7);leaf.rotation.z=(rand()-.5)*.6;if(i%4===0){sphere(.1,choose([0xffd16e,0xff8fab,0xf7f2db]),x,h+.1,z,8)}}
+   // Bright resort lighting and a gentle sky fill.
+   scene.fog=new THREE.Fog(0x9adbe3,42,92);
+ }
+ player=makePerson(customColor);player.position.set(-1,0,2);applyChameleonColor(player,customColor);loadPaintData(player);
+ cpu=makePerson(role==='hide'?0xe6a16c:0x79d4a8);cpu.position.set(2,0,-2);
+ applyPattern(player,customPattern);applyPattern(cpu,customPattern);player.visible=true;cpu.visible=true;
+ // If you are seeking, the CPU blends beside a prop. If hiding, seeker starts at far end.
+ if(role==='seek'){player.position.set(-1,0,2);cpu.position.set(choose([-12,12,-15,15]),0,choose([-12,12,-15,15]));cpu.visible=false;seekTarget=cpu}
+ else{player.position.set(choose([-8,-5,5,8]),0,choose([-8,8,12,-12]));cpu.position.set(0,0,-17);seekTarget=player}
+ yaw=0;pitch=-.12;blendOn=false;move={x:0,y:0};updateCamera();
+}
+function updateCamera(){
+ if(!player||!camera)return;let target=player.position.clone();target.y+=1.05;
+ const dist=role==='seek'?6.8:6.2;
+ camera.position.set(target.x+Math.sin(yaw)*dist*Math.cos(pitch),target.y+2.1+Math.sin(-pitch)*dist,target.z+Math.cos(yaw)*dist*Math.cos(pitch));
+ camera.lookAt(target.x,target.y+.1,target.z);
+}
+function startGame(){
+ $('menu').classList.add('hidden');$('result').classList.add('hidden');$('pause').classList.add('hidden');$('hud').classList.remove('hidden');
+ seed=(Math.random()*0xffffffff)>>>0;buildWorld(stage);elapsed=0;timeLeft=diffs[diff].time;prep=role==='hide'?5:3;blendOn=false;gameOver=false;running=true;paused=false;lastHint=0;
+ $('rolelabel').textContent=role==='hide'?'HIDER · 隠れる側':'SEEKER · 探す側';$('stagenamehud').textContent=themes[stage].name;$('timer').textContent=formatTime(timeLeft);
+ $('message').textContent=role==='hide'?'準備時間！物陰を探そう':'探す準備をしよう';$('blend').style.display=role==='hide'?'flex':'none';$('inspect').style.display=role==='seek'?'flex':'none';
+ $('tip').textContent=role==='hide'?'移動して物陰へ · 擬態中は静止しよう':'怪しい場所に近づいて「調査する」';
+ sound(420,.08);$('start').textContent='ゲームスタート　→';
+}
+function formatTime(n){n=Math.max(0,Math.ceil(n));return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')}
+function sound(freq=500,dur=.09){if(!audioOn)return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(.045,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+dur)}catch(e){}}
+function moveActor(actor,dx,dz,dt){
+ const speed=3.25*diffs[diff].speed;let nx=actor.position.x+dx*speed*dt,nz=actor.position.z+dz*speed*dt;
+ nx=Math.max(-23,Math.min(23,nx));nz=Math.max(-23,Math.min(23,nz));
+ // Lightweight collision against building footprints
+ let blocked=false;
+ for(const m of worldObjects){if(m.geometry.type!=='BoxGeometry')continue;const p=m.position,params=m.geometry.parameters;
+  if(params.height>1.5&&Math.abs(nx-p.x)<params.width/2+.34&&Math.abs(nz-p.z)<params.depth/2+.34&&p.y>0.5){blocked=true;break}
+ }
+ if(!blocked){actor.position.x=nx;actor.position.z=nz}
+}
+function update(dt){
+ if(!running||paused||gameOver)return;
+ elapsed+=dt;
+ if(prep>0){prep-=dt;if(prep<=0){prep=0;$('message').textContent=role==='hide'?'時間内、見つからずに生き残れ！':'隠れた相手を探し出そう！';sound(660,.15)}else $('message').textContent='スタートまで '+Math.ceil(prep);return}
+ timeLeft-=dt;$('timer').textContent=formatTime(timeLeft);
+ // Player movement from joystick, forward relative to camera yaw
+ const mx=move.x,mz=move.y;let moving=Math.hypot(mx,mz)>.12;
+ if(moving){const dx=mx*Math.cos(yaw)+mz*Math.sin(yaw),dz=-mx*Math.sin(yaw)+mz*Math.cos(yaw);moveActor(player,dx,dz,dt);player.rotation.y=Math.atan2(dx,dz);blendOn=false}
+ if(role==='hide'){
+   // seeker CPU patrols between landmarks and approaches only when its imperfect vision catches movement
+   const dx=player.position.x-cpu.position.x,dz=player.position.z-cpu.position.z,dist=Math.hypot(dx,dz);
+   let see=dist<diffs[diff].detect+1.5 && (!blendOn||moving) && Math.abs(dx)<10;
+   if(dist>1.5&&see){moveActor(cpu,dx/dist,dz/dist,dt*diffs[diff].speed);cpu.rotation.y=Math.atan2(dx,dz)}
+   else {cpu.userData.patrol=(cpu.userData.patrol||0)+dt;if(cpu.userData.patrol>3){cpu.userData.patrol=0;cpu.userData.tx=choose([-13,-8,0,8,13]);cpu.userData.tz=choose([-14,-8,0,8,14])}
+    const tx=(cpu.userData.tx||0)-cpu.position.x,tz=(cpu.userData.tz||-12)-cpu.position.z,dd=Math.hypot(tx,tz);if(dd>1.2)moveActor(cpu,tx/dd,tz/dd,dt*.65)}
+   if(blendOn&&!moving){player.userData.skin.color.setHex(nearestColor(player.position.x,player.position.z));player.userData.body.material.color.copy(player.userData.skin.color);player.userData.head.material.color.copy(player.userData.skin.color)}
+   else if(!blendOn){applyChameleonColor(player,customColor)}
+   if(dist<.95){finish(false,'CPUに見つかってしまった！','もう少し物陰を使って、静かに擬態しよう。')}
+   if(timeLeft<=0)finish(true,'見事な擬態！','制限時間を逃げ切りました。あなたの勝ち！');
+ }else{
+   // CPU hider stays close to a chosen prop and shifts subtly on higher difficulty
+   const dist=Math.hypot(cpu.position.x-player.position.x,cpu.position.z-player.position.z);
+   cpu.userData.wiggle=(cpu.userData.wiggle||0)+dt;
+   if(cpu.userData.wiggle>8){cpu.userData.wiggle=0;cpu.userData.tx=choose([-15,-10,-5,5,10,15]);cpu.userData.tz=choose([-15,-10,-5,5,10,15])}
+   if(diff>=2&&Math.hypot((cpu.userData.tx||0)-cpu.position.x,(cpu.userData.tz||0)-cpu.position.z)>1.3){let dx=(cpu.userData.tx||0)-cpu.position.x,dz=(cpu.userData.tz||0)-cpu.position.z,d=Math.hypot(dx,dz);moveActor(cpu,dx/d,dz/d,dt*.35)}
+   if(dist<diffs[diff].detect&&elapsed>prep+1){$('message').textContent='近くに何かいるかも…';if(elapsed-lastHint>diffs[diff].hint){lastHint=elapsed;sound(280,.12)}}
+   else if(elapsed-lastHint>diffs[diff].hint){lastHint=elapsed;$('message').textContent=choose(['周囲の色と輪郭を観察しよう','小物の近くを調べてみよう','動かないものにも注目！'])}
+   if(timeLeft<=0)finish(false,'時間切れ！','CPUは最後まで景色に紛れ込みました。');
+ }
+ // Simple idle/walk animation
+ const bob=moving?Math.sin(elapsed*12)*.035:Math.sin(elapsed*2)*.012;player.position.y=bob;
+ if(role==='seek')cpu.position.y=Math.sin(elapsed*2)*.012;
+ updateCamera();
+}
+function nearestColor(x,z){let best=hidingSpots[0],d=1e9;for(const s of hidingSpots){let dd=(s.x-x)**2+(s.z-z)**2;if(dd<d){d=dd;best=s}}return best?best.color:themes[stage].wall}
+function finish(win,title,txt){if(gameOver)return;gameOver=true;running=false;sound(win?880:180,.25);$('resulticon').textContent=win?'🏆':'🦎';$('resulttitle').textContent=title;$('resulttext').textContent=txt;$('result').classList.remove('hidden');$('hud').classList.add('hidden')}
+function inspect(){
+ if(!running||paused||role!=='seek'||prep>0)return;
+ const dx=cpu.position.x-player.position.x,dz=cpu.position.z-player.position.z,d=Math.hypot(dx,dz);
+ if(d<diffs[diff].detect+1.0){cpu.visible=true;cpu.traverse(o=>{if(o.material&&o.material.color)o.material.color.setHex(0xffd58a)});finish(true,'見つけた！','景色の違和感を見抜きました。あなたの勝ち！');}
+ else{sound(190,.1);$('message').textContent='ここにはいないようだ…';timeLeft=Math.max(0,timeLeft-3);$('timer').textContent=formatTime(timeLeft);if(timeLeft<=0)finish(false,'時間切れ！','CPUは最後まで景色に紛れ込みました。')}
+}
+function animate(){raf=requestAnimationFrame(animate);let dt=Math.min(clock.getDelta(),.05);update(dt);if(renderer&&scene&&camera)renderer.render(scene,camera)}
+function setRole(r){role=r;document.querySelectorAll('#roles button').forEach(b=>b.classList.toggle('selected',b.dataset.role===r))}
+function buildStageCards(){
+ const root=$('stages');root.innerHTML='';
+ themes.forEach((t,i)=>{
+  const b=document.createElement('button');
+  b.className='stage'+(i===stage?' selected':'');
+  b.innerHTML='<div class="thumb" style="--a:'+t.a+';--b:'+t.b+'"><span>'+t.emoji+'</span></div><span class="name">'+t.name+'</span>';
+  b.onclick=()=>{stage=i;buildStageCards();$('stagecount').textContent=String(i+1).padStart(2,'0')+' / '+themes.length;buildWorld(stage)};
+  root.appendChild(b);
+ });
+}
+document.querySelectorAll('[data-diff]').forEach(b=>b.addEventListener('click',()=>{diff=+b.dataset.diff;document.querySelectorAll('[data-diff]').forEach(x=>x.classList.toggle('selected',x===b))}));
+document.querySelectorAll('[data-role]').forEach(b=>b.addEventListener('click',()=>setRole(b.dataset.role)));
+$('start').addEventListener('click',()=>startGame());$('again').addEventListener('click',()=>startGame());$('backmenu').addEventListener('click',()=>{$('result').classList.add('hidden');$('menu').classList.remove('hidden');running=false;buildWorld(stage)});
+$('blend').addEventListener('click',()=>{if(role!=='hide'||!running||prep>0)return;blendOn=!blendOn;$('blend').classList.toggle('selected',blendOn);$('message').textContent=blendOn?'擬態中！動かずに景色に溶け込もう':'擬態を解除しました';sound(blendOn?720:340,.1)});
+$('inspect').addEventListener('click',inspect);
+$('pausebtn').addEventListener('click',()=>{paused=true;$('pause').classList.remove('hidden')});$('resume').addEventListener('click',()=>{paused=false;$('pause').classList.add('hidden')});
+$('quit').addEventListener('click',()=>{running=false;paused=false;$('pause').classList.add('hidden');$('hud').classList.add('hidden');$('menu').classList.remove('hidden');buildWorld(stage)});
+$('soundtoggle').addEventListener('change',e=>audioOn=e.target.checked);
+$('quality').addEventListener('change',e=>{quality=e.target.value;if(renderer){renderer.setPixelRatio(Math.min(devicePixelRatio||1,innerWidth<700?(quality==='high'?1.5:1.15):1.7));renderer.setSize(innerWidth,innerHeight)}});
+function resize(){if(!camera||!renderer)return;camera.aspect=innerWidth/innerHeight;camera.fov=innerWidth<innerHeight?75:64;camera.updateProjectionMatrix();renderer.setPixelRatio(Math.min(devicePixelRatio||1,innerWidth<700?(quality==='high'?1.5:1.15):1.7));renderer.setSize(innerWidth,innerHeight)}
+addEventListener('resize',resize);
+const joy=$('joystick'),stick=$('stick');let joyId=null,joyRect=null;
+function joyStart(e){e.preventDefault();joyId=e.pointerId;joy.setPointerCapture(joyId);joyRect=joy.getBoundingClientRect();joyMove(e)}
+function joyMove(e){if(e.pointerId!==joyId)return;let cx=joyRect.left+joyRect.width/2,cy=joyRect.top+joyRect.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=joyRect.width*.32,len=Math.hypot(dx,dy);if(len>max){dx=dx/len*max;dy=dy/len*max}stick.style.transform='translate('+dx+'px,'+dy+'px)';move.x=dx/max;move.y=dy/max}
+function joyEnd(e){if(e.pointerId!==joyId)return;joyId=null;move={x:0,y:0};stick.style.transform='translate(0,0)'}
+joy.addEventListener('pointerdown',joyStart);joy.addEventListener('pointermove',joyMove);joy.addEventListener('pointerup',joyEnd);joy.addEventListener('pointercancel',joyEnd);
+$('world').addEventListener('pointerdown',e=>{if(!running||paused)return;if(e.clientX<innerWidth*.32&&e.clientY>innerHeight*.5)return;lookPointer={id:e.pointerId,x:e.clientX,y:e.clientY};$('world').setPointerCapture(e.pointerId)});
+$('world').addEventListener('pointermove',e=>{if(!lookPointer||e.pointerId!==lookPointer.id)return;let dx=e.clientX-lookPointer.x,dy=e.clientY-lookPointer.y;lookPointer.x=e.clientX;lookPointer.y=e.clientY;yaw-=dx*.006;pitch=Math.max(-.65,Math.min(.32,pitch+dy*.0035))});
+$('world').addEventListener('pointerup',e=>{if(lookPointer&&e.pointerId===lookPointer.id)lookPointer=null});$('world').addEventListener('pointercancel',()=>lookPointer=null);
+document.addEventListener('contextmenu',e=>e.preventDefault());
+const paintColors=[['Lime',0x73d6ad],['Ocean',0x38bde0],['Sunset',0xff8a52],['Violet',0xb58aff],['Rose',0xf46fa7],['Gold',0xffd34e],['Mint',0x7bf0d0],['Leaf',0x39865b],['Ice',0xd5f5ff],['Midnight',0x34405f],['Coral',0xff665e],['Rainbow',0xe9ed68]];
+function refreshPaintUI(){const root=$('paintPalette');root.innerHTML='';paintColors.forEach(([name,color])=>{const b=document.createElement('button');b.className='swatch'+(Number(customColor)===color?' selected':'');b.style.background='#'+color.toString(16).padStart(6,'0');b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>{customColor=color;root.querySelectorAll('.swatch').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');if(player)applyChameleonColor(player,color);if(cpu)applyChameleonColor(cpu,color)};root.appendChild(b)});document.querySelectorAll('[data-pattern]').forEach(b=>b.classList.toggle('selected',b.dataset.pattern===customPattern))}
+$('paintOpen').addEventListener('click',()=>{running=false;$('menu').classList.add('hidden');$('paintScreen').classList.remove('hidden');buildWorld(stage);player.position.set(0,0,0);player.rotation.y=paintYaw;cpu.visible=false;camera.position.set(0,2.35,4.8);camera.lookAt(0,.85,0);paintHistory=[];refreshPaintUI();requestAnimationFrame(()=>setupPaintCanvas())});
+$('paintPatterns').addEventListener('click',e=>{const b=e.target.closest('[data-pattern]');if(!b)return;customPattern=b.dataset.pattern;document.querySelectorAll('[data-pattern]').forEach(x=>x.classList.toggle('selected',x===b));if(player)applyPattern(player,customPattern);if(cpu)applyPattern(cpu,customPattern)});
+$('paintSave').addEventListener('click',()=>{localStorage.setItem('cwColor',String(customColor));localStorage.setItem('cwPattern',customPattern);if(player?.userData.paintCanvas){try{localStorage.setItem('cwPaintTexture',player.userData.paintCanvas.toDataURL('image/png'))}catch(e){console.warn('ペイント画像の保存に失敗しました',e)}}$('paintScreen').classList.add('hidden');$('menu').classList.remove('hidden');buildWorld(stage)});
+$('paintCancel').addEventListener('click',()=>{$('paintScreen').classList.add('hidden');$('menu').classList.remove('hidden');buildWorld(stage)});
+$('world').addEventListener('pointermove',e=>{if($('paintScreen').classList.contains('hidden')||!player)return; if(e.buttons){paintYaw+=(e.movementX||0)*.01;player.rotation.y=paintYaw;camera.position.set(Math.sin(paintYaw)*4.8,2.35,Math.cos(paintYaw)*4.8);camera.lookAt(0,.85,0)}});
+function setupPaintCanvas(){
+ const c=$('paintCanvas');if(!c||!renderer||!player)return;paintCanvas2D=c.getContext('2d');
+ const resize=()=>{const r=c.getBoundingClientRect();if(!r.width||!r.height)return;c.width=Math.round(r.width*(devicePixelRatio||1));c.height=Math.round(r.height*(devicePixelRatio||1));paintCanvas2D.clearRect(0,0,c.width,c.height);paintCanvas2D.fillStyle='#ffffff';paintCanvas2D.globalAlpha=.13;paintCanvas2D.fillRect(0,0,c.width,c.height);paintCanvas2D.globalAlpha=1;paintCanvas2D.fillStyle='#143b36';paintCanvas2D.font='bold 17px system-ui';paintCanvas2D.fillText('🦎 3Dモデルを指でなぞって塗ろう',12,28)};
+ resize();
+ if(!paintRaycaster)paintRaycaster=new THREE.Raycaster();if(!paintNdc)paintNdc=new THREE.Vector2();
+ let lastPaintPoint=null;
+ const draw=(e)=>{paintNdc.x=(e.clientX/innerWidth)*2-1;paintNdc.y=-(e.clientY/innerHeight)*2+1;paintRaycaster.setFromCamera(paintNdc,camera);const hits=paintRaycaster.intersectObject(player,true).filter(h=>h.uv&&h.object.material===player.userData.skin);if(!hits.length){lastPaintPoint=null;return}const uv=hits[0].uv;const x=uv.x*player.userData.paintCanvas.width,y=(1-uv.y)*player.userData.paintCanvas.height;const ctx=player.userData.paintCtx;ctx.fillStyle='#'+customColor.toString(16).padStart(6,'0');ctx.beginPath();if(lastPaintPoint){ctx.moveTo(lastPaintPoint.x,lastPaintPoint.y);ctx.lineTo(x,y);ctx.lineWidth=brushSize*2;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=ctx.fillStyle;ctx.stroke()}ctx.beginPath();ctx.arc(x,y,brushSize,0,Math.PI*2);ctx.fill();player.userData.paintTexture.needsUpdate=true;paintHistory.push({x,y,r:brushSize,color:customColor,from:lastPaintPoint?{...lastPaintPoint}:null});if(paintHistory.length>240)paintHistory.shift();lastPaintPoint={x,y}};
+ let drawing=false;c.onpointerdown=e=>{drawing=true;lastPaintPoint=null;c.setPointerCapture(e.pointerId);draw(e)};c.onpointermove=e=>{if(drawing)draw(e)};const stopDrawing=()=>{drawing=false;lastPaintPoint=null};c.onpointerup=stopDrawing;c.onpointercancel=stopDrawing;
+ document.querySelectorAll('[data-brush]').forEach(b=>b.onclick=()=>{brushSize=Number(b.dataset.brush);document.querySelectorAll('[data-brush]').forEach(x=>x.classList.toggle('selected',x===b))});
+ $('paintUndo').onclick=()=>{const ctx=player.userData.paintCtx;ctx.clearRect(0,0,player.userData.paintCanvas.width,player.userData.paintCanvas.height);paintHistory.pop();for(const d of paintHistory){ctx.fillStyle='#'+d.color.toString(16).padStart(6,'0');if(d.from){ctx.beginPath();ctx.moveTo(d.from.x,d.from.y);ctx.lineTo(d.x,d.y);ctx.lineWidth=d.r*2;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=ctx.fillStyle;ctx.stroke()}ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fill()}player.userData.paintTexture.needsUpdate=true};
+ $('paintClear').onclick=()=>{player.userData.paintCtx.clearRect(0,0,player.userData.paintCanvas.width,player.userData.paintCanvas.height);paintHistory=[];player.userData.paintTexture.needsUpdate=true};
+ loadPaintData(player);
+}
+buildStageCards();
+if(window.THREE)init3D();else{setTimeout(()=>{if(!window.THREE)showError('Three.jsの読み込みに失敗しました。インターネット接続を確認してください。')},5000)}
+})();
+</script>
+</body></html>
