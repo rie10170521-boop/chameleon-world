@@ -38,7 +38,7 @@ h1{font-size:clamp(34px,7vw,64px);line-height:1.02;letter-spacing:-.05em;margin:
 #paintScreen{z-index:7;background:linear-gradient(180deg,rgba(7,14,22,.16),rgba(7,14,22,.82));}
 .paintpanel{width:min(520px,100%);background:rgba(10,24,31,.91);border:1px solid #ffffff35;border-radius:24px;padding:20px;box-shadow:0 20px 70px #0008;backdrop-filter:blur(14px)}
 .palette{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin:14px 0}.swatch{aspect-ratio:1;border-radius:50%;padding:0;border:3px solid #ffffff55;min-width:0}.swatch.selected{outline:3px solid #fff;outline-offset:2px;box-shadow:0 0 0 5px #0006}
-.patterns{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.pattern{padding:10px 4px;font-size:12px}.paintnote{font-size:12px;color:#b7cbd0;line-height:1.5}
+.patterns{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.pattern{padding:10px 4px;font-size:12px}.paintnote{font-size:12px;color:#b7cbd0;line-height:1.5}.brushrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}.brushrow button{padding:9px 12px}.paintstage{position:relative;height:210px;border-radius:18px;overflow:hidden;border:1px solid #ffffff2a;background:linear-gradient(#9dd8d2,#e1d6a5 68%,#526b4a);margin:12px 0}.paintstage:before{content:"✦   ☁       ☁";position:absolute;inset:14px 18px;color:#ffffffa0;letter-spacing:2em;font-size:18px}.paintstage canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}.paintbadge{position:absolute;z-index:1;bottom:8px;left:10px;font-size:11px;background:#10231dc9;border-radius:99px;padding:6px 9px}.paintpanel{max-height:100%;overflow:auto}
 @media(max-width:600px){.paintpanel{padding:16px}.palette{gap:7px}}
 </style>
 </head>
@@ -63,10 +63,12 @@ h1{font-size:clamp(34px,7vw,64px);line-height:1.02;letter-spacing:-.05em;margin:
 </div>
 <div id="paintScreen" class="screen hidden"><div class="paintpanel">
  <div class="eyebrow">CUSTOMIZE YOUR CHAMELEON</div><h1 style="font-size:32px">自分だけの色にしよう 🎨</h1>
- <p>色や模様を選ぶと、ゲーム中のカメレオンにも反映されるよ。</p>
+ <p>色を選んで、カメレオンの体を指でなぞってみよう。デザインは保存されるよ。</p>
+ <div class="paintstage"><canvas id="paintCanvas"></canvas><span class="paintbadge">指でなぞってペイント · 2本指ではなく1本指で</span></div>
+ <div class="brushrow"><strong>ブラシ</strong><button data-brush="8" class="selected">細め</button><button data-brush="16">ふつう</button><button data-brush="28">太め</button><button id="paintUndo">↶ 1手戻す</button><button id="paintClear">消去</button></div>
  <h2>① 体の色</h2><div class="palette" id="paintPalette"></div>
  <h2>② 模様</h2><div class="patterns" id="paintPatterns"><button class="pattern selected" data-pattern="plain">なし</button><button class="pattern" data-pattern="spots">水玉</button><button class="pattern" data-pattern="stripes">しま模様</button><button class="pattern" data-pattern="stars">星柄</button></div>
- <p class="paintnote">※ このバージョンでは体全体の色と模様を選べます。ブラシで部位ごとに塗る機能は次の拡張で追加できます。</p>
+ <p class="paintnote">塗った模様はカメレオンの表面に反映され、次回も保存されるよ。ブラシで描いた模様は3Dモデルの表面に貼り付くテクスチャ方式です。</p>
  <button id="paintSave" class="primary big">このデザインで遊ぶ</button><button id="paintCancel" class="big">戻る</button>
  </div></div>
 <div id="hud" class="hidden">
@@ -98,7 +100,7 @@ const themes=[
 {name:'ちいさな商店街',emoji:'🧸',a:'#e6a46c',b:'#9bc9b5',sky:0xb8d9dc,ground:0xb5a18b,wall:0xf0d8ad,accent:0xe57f72,items:['おもちゃ箱','カフェ看板','商品棚'],style:'toy'}
 ];
 const diffs=[{name:'EASY',time:110,speed:.85,detect:4.1,hint:13},{name:'NORMAL',time:90,speed:1,detect:3.1,hint:18},{name:'HARD',time:72,speed:1.22,detect:2.45,hint:25},{name:'EXPERT',time:55,speed:1.42,detect:1.9,hint:33}];
-let customColor=Number(localStorage.getItem('cwColor')||'0x73d6ad'),customPattern=localStorage.getItem('cwPattern')||'plain',paintYaw=0,stage=0,diff=0,role='hide',scene,camera,renderer,clock,player,cpu,ground,worldObjects=[],hidingSpots=[],seed=1,running=false,paused=false,elapsed=0,timeLeft=90,prep=5,blendOn=false,gameOver=false,lastHint=0,seekTarget=null,move={x:0,y:0},yaw=0,pitch=-.14,lookPointer=null,raf=0,quality='low',audioOn=true,audioCtx=null;
+let customColor=Number(localStorage.getItem('cwColor')||'0x73d6ad'),customPattern=localStorage.getItem('cwPattern')||'spots',paintYaw=0,stage=0,diff=0,role='hide',scene,camera,renderer,clock,player,cpu,ground,worldObjects=[],hidingSpots=[],seed=1,running=false,paused=false,elapsed=0,timeLeft=90,prep=5,blendOn=false,gameOver=false,lastHint=0,seekTarget=null,move={x:0,y:0},yaw=0,pitch=-.14,lookPointer=null,raf=0,quality='low',audioOn=true,audioCtx=null;
 const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
 const choose=a=>a[Math.floor(rand()*a.length)];
 function showError(msg){$('loading').classList.add('hidden');$('error').classList.remove('hidden');$('errortext').textContent=msg}
@@ -116,8 +118,15 @@ function mat(color,rough=.9,metal=0){return new THREE.MeshStandardMaterial({colo
 function box(w,h,d,color,x,y,z,opts={}){let mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color,opts.rough??.9,opts.metal??0));mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);worldObjects.push(mesh);return mesh}
 function cylinder(r1,r2,h,color,x,y,z,segments=7){let m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,segments),mat(color));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);worldObjects.push(m);return m}
 function sphere(r,color,x,y,z,segments=8){let m=new THREE.Mesh(new THREE.SphereGeometry(r,segments,6),mat(color));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);worldObjects.push(m);return m}
+let paintCanvas2D=null,paintTexture=null,brushSize=16,paintHistory=[],paintRaycaster=null,paintNdc=null;
+function makePaintTexture(color){
+ const c=document.createElement('canvas');c.width=512;c.height=256;const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);
+ const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;tex.needsUpdate=true;return {canvas:c,ctx:x,texture:tex};
+}
+function loadPaintData(actor){const data=localStorage.getItem('cwPaintTexture');if(!data||!actor?.userData.skin)return;const img=new Image();img.onload=()=>{const c=actor.userData.paintCanvas;if(!c)return;const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);actor.userData.paintTexture.needsUpdate=true};img.src=data}
 function makePerson(color=customColor){
  const g=new THREE.Group(),skin=mat(color,.62),dark=mat(0x244c42,.8),eyeWhite=mat(0xfff5d9,.28),pupil=mat(0x14252b,.2),belly=mat(new THREE.Color(color).multiplyScalar(.72),.72);
+ const pt=makePaintTexture(color);skin.map=pt.texture;skin.transparent=true;skin.alphaTest=.025;skin.needsUpdate=true;
  // Rounded, friendly chameleon body instead of blocky humanoid parts
  const torso=new THREE.Mesh(new THREE.SphereGeometry(.58,20,14),skin);torso.scale.set(1.12,.72,1.42);torso.position.set(0,.83,0);g.add(torso);
  const chest=new THREE.Mesh(new THREE.SphereGeometry(.42,16,12),belly);chest.scale.set(.92,.7,.7);chest.position.set(0,.68,-.28);g.add(chest);
@@ -133,7 +142,7 @@ function makePerson(color=customColor){
  let prev=new THREE.Vector3(0,.8,.46);for(let i=0;i<12;i++){let a=i/11*Math.PI*1.8;let radius=.38*(1-i/13);let pt=new THREE.Vector3(Math.sin(a)*radius,.72+Math.sin(a*.8)*.14,.48+Math.cos(a)*radius);const seg=new THREE.Mesh(new THREE.SphereGeometry(.105*(1-i/16),10,8),skin);seg.position.copy(pt);g.add(seg);prev=pt}
  // tiny crest bumps
  for(let i=0;i<5;i++){const spike=new THREE.Mesh(new THREE.SphereGeometry(.075,8,6),dark);spike.scale.set(.65,1.25,.65);spike.position.set(0,1.65-i*.055,-.52+i*.18);g.add(spike)}
- g.userData.baseColor=color;g.userData.body=torso;g.userData.head=head;g.userData.skin=skin;g.userData.belly=belly;g.userData.patternGroup=new THREE.Group();g.add(g.userData.patternGroup);applyPattern(g,customPattern);
+ g.userData.baseColor=color;g.userData.body=torso;g.userData.head=head;g.userData.skin=skin;g.userData.paintCanvas=pt.canvas;g.userData.paintCtx=pt.ctx;g.userData.paintTexture=pt.texture;g.userData.belly=belly;g.userData.patternGroup=new THREE.Group();g.add(g.userData.patternGroup);applyPattern(g,customPattern);
  scene.add(g);return g
 }
 function applyPattern(actor,pattern){
@@ -192,7 +201,9 @@ function buildWorld(si){
  for(let i=0;i<10;i++){let x=(rand()-.5)*34,z=(rand()-.5)*34;if(Math.abs(x)<5&&Math.abs(z)<5)continue;
  if(t.style==='jungle'||t.style==='beach'||rand()>.45){cylinder(.09,.14,1.1,0x6b503b,x,.55,z);sphere(.5,t.style==='snow'?0xf0f4f4:t.style==='jungle'?0x276747:0x4d8054,x,1.25,z)}
  }
- player=makePerson(customColor);player.position.set(-1,0,2);applyChameleonColor(player,customColor);
+ // Enchanted garden layer: low clumps, bright flowers, tiny mushrooms and glowing stones.
+ for(let i=0;i<76;i++){let x=(rand()-.5)*42,z=(rand()-.5)*42;if(Math.abs(x)<4.8&&Math.abs(z)<4.8)continue;let h=.18+rand()*.38;let leaf=sphere(.12+rand()*.09,t.style==='snow'?0xe8f4f6:t.style==='neon'||t.style==='dark'?0x5bcaad:0x4e945c,x,h*.55,z,7);leaf.scale.set(.75,1.8,.8);leaf.rotation.z=(rand()-.5)*.7;if(i%3===0){cylinder(.025,.035,.18,0x6b593d,x,h+.08,z,6);sphere(.09,choose([0xffd56b,0xff83b4,0x9ce7ff,0xc6a5ff]),x,h+.2,z,8)}if(i%7===0){sphere(.19,t.style==='neon'||t.style==='dark'?0x8b65c9:0xd8d5bd,x,.12,z,8).scale.set(1,.6,1);sphere(.13,0xf2b8dc,x,.27,z,8)}}
+ player=makePerson(customColor);player.position.set(-1,0,2);applyChameleonColor(player,customColor);loadPaintData(player);
  cpu=makePerson(role==='hide'?0xe6a16c:0x79d4a8);cpu.position.set(2,0,-2);
  applyPattern(player,customPattern);applyPattern(cpu,customPattern);player.visible=true;cpu.visible=true;
  // If you are seeking, the CPU blends beside a prop. If hiding, seeker starts at far end.
@@ -270,7 +281,16 @@ function inspect(){
 }
 function animate(){raf=requestAnimationFrame(animate);let dt=Math.min(clock.getDelta(),.05);update(dt);if(renderer&&scene&&camera)renderer.render(scene,camera)}
 function setRole(r){role=r;document.querySelectorAll('#roles button').forEach(b=>b.classList.toggle('selected',b.dataset.role===r))}
-function buildStageCards(){const root=$('stages');root.innerHTML='';themes.forEach((t,i)=>{let b=document.createElement('button');b.className='stage'+(i===stage?' selected':'');b.innerHTML='<div class="thumb" style="--a:'+t.a+';--b:'+t.b+'"><span>'+t.emoji+'</span></div><span class="name">'+t.name+'</span>';b.onclick=()=>{stage=i;buildStageCards();$('stagecount').textContent=String(i+1).padStart(2,'0')+' / 12';buildWorld(stage)};root.appendChild(b)})}
+function buildStageCards(){
+ const root=$('stages');root.innerHTML='';
+ themes.forEach((t,i)=>{
+  const b=document.createElement('button');
+  b.className='stage'+(i===stage?' selected':'');
+  b.innerHTML='<div class="thumb" style="--a:'+t.a+';--b:'+t.b+'"><span>'+t.emoji+'</span></div><span class="name">'+t.name+'</span>';
+  b.onclick=()=>{stage=i;buildStageCards();$('stagecount').textContent=String(i+1).padStart(2,'0')+' / '+themes.length;buildWorld(stage)};
+  root.appendChild(b);
+ });
+}
 document.querySelectorAll('[data-diff]').forEach(b=>b.addEventListener('click',()=>{diff=+b.dataset.diff;document.querySelectorAll('[data-diff]').forEach(x=>x.classList.toggle('selected',x===b))}));
 document.querySelectorAll('[data-role]').forEach(b=>b.addEventListener('click',()=>setRole(b.dataset.role)));
 $('start').addEventListener('click',()=>startGame());$('again').addEventListener('click',()=>startGame());$('backmenu').addEventListener('click',()=>{$('result').classList.add('hidden');$('menu').classList.remove('hidden');running=false;buildWorld(stage)});
@@ -293,11 +313,24 @@ $('world').addEventListener('pointerup',e=>{if(lookPointer&&e.pointerId===lookPo
 document.addEventListener('contextmenu',e=>e.preventDefault());
 const paintColors=[['Lime',0x73d6ad],['Ocean',0x38bde0],['Sunset',0xff8a52],['Violet',0xb58aff],['Rose',0xf46fa7],['Gold',0xffd34e],['Mint',0x7bf0d0],['Leaf',0x39865b],['Ice',0xd5f5ff],['Midnight',0x34405f],['Coral',0xff665e],['Rainbow',0xe9ed68]];
 function refreshPaintUI(){const root=$('paintPalette');root.innerHTML='';paintColors.forEach(([name,color])=>{const b=document.createElement('button');b.className='swatch'+(Number(customColor)===color?' selected':'');b.style.background='#'+color.toString(16).padStart(6,'0');b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>{customColor=color;root.querySelectorAll('.swatch').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');if(player)applyChameleonColor(player,color);if(cpu)applyChameleonColor(cpu,color)};root.appendChild(b)});document.querySelectorAll('[data-pattern]').forEach(b=>b.classList.toggle('selected',b.dataset.pattern===customPattern))}
-$('paintOpen').addEventListener('click',()=>{running=false;$('menu').classList.add('hidden');$('paintScreen').classList.remove('hidden');buildWorld(stage);player.position.set(0,0,0);player.rotation.y=paintYaw;cpu.visible=false;camera.position.set(0,2.35,4.8);camera.lookAt(0,.85,0);refreshPaintUI()});
+$('paintOpen').addEventListener('click',()=>{running=false;$('menu').classList.add('hidden');$('paintScreen').classList.remove('hidden');buildWorld(stage);player.position.set(0,0,0);player.rotation.y=paintYaw;cpu.visible=false;camera.position.set(0,2.35,4.8);camera.lookAt(0,.85,0);paintHistory=[];refreshPaintUI();requestAnimationFrame(()=>setupPaintCanvas())});
 $('paintPatterns').addEventListener('click',e=>{const b=e.target.closest('[data-pattern]');if(!b)return;customPattern=b.dataset.pattern;document.querySelectorAll('[data-pattern]').forEach(x=>x.classList.toggle('selected',x===b));if(player)applyPattern(player,customPattern);if(cpu)applyPattern(cpu,customPattern)});
-$('paintSave').addEventListener('click',()=>{localStorage.setItem('cwColor',String(customColor));localStorage.setItem('cwPattern',customPattern);$('paintScreen').classList.add('hidden');$('menu').classList.remove('hidden');buildWorld(stage)});
+$('paintSave').addEventListener('click',()=>{localStorage.setItem('cwColor',String(customColor));localStorage.setItem('cwPattern',customPattern);if(player?.userData.paintCanvas){try{localStorage.setItem('cwPaintTexture',player.userData.paintCanvas.toDataURL('image/png'))}catch(e){console.warn('ペイント画像の保存に失敗しました',e)}}$('paintScreen').classList.add('hidden');$('menu').classList.remove('hidden');buildWorld(stage)});
 $('paintCancel').addEventListener('click',()=>{$('paintScreen').classList.add('hidden');$('menu').classList.remove('hidden');buildWorld(stage)});
 $('world').addEventListener('pointermove',e=>{if($('paintScreen').classList.contains('hidden')||!player)return; if(e.buttons){paintYaw+=(e.movementX||0)*.01;player.rotation.y=paintYaw;camera.position.set(Math.sin(paintYaw)*4.8,2.35,Math.cos(paintYaw)*4.8);camera.lookAt(0,.85,0)}});
+function setupPaintCanvas(){
+ const c=$('paintCanvas');if(!c||!renderer||!player)return;paintCanvas2D=c.getContext('2d');
+ const resize=()=>{const r=c.getBoundingClientRect();if(!r.width||!r.height)return;c.width=Math.round(r.width*(devicePixelRatio||1));c.height=Math.round(r.height*(devicePixelRatio||1));paintCanvas2D.clearRect(0,0,c.width,c.height);paintCanvas2D.fillStyle='#ffffff';paintCanvas2D.globalAlpha=.13;paintCanvas2D.fillRect(0,0,c.width,c.height);paintCanvas2D.globalAlpha=1;paintCanvas2D.fillStyle='#143b36';paintCanvas2D.font='bold 17px system-ui';paintCanvas2D.fillText('🦎 3Dモデルを指でなぞって塗ろう',12,28)};
+ resize();
+ if(!paintRaycaster)paintRaycaster=new THREE.Raycaster();if(!paintNdc)paintNdc=new THREE.Vector2();
+ let lastPaintPoint=null;
+ const draw=(e)=>{paintNdc.x=(e.clientX/innerWidth)*2-1;paintNdc.y=-(e.clientY/innerHeight)*2+1;paintRaycaster.setFromCamera(paintNdc,camera);const hits=paintRaycaster.intersectObject(player,true).filter(h=>h.uv&&h.object.material===player.userData.skin);if(!hits.length){lastPaintPoint=null;return}const uv=hits[0].uv;const x=uv.x*player.userData.paintCanvas.width,y=(1-uv.y)*player.userData.paintCanvas.height;const ctx=player.userData.paintCtx;ctx.fillStyle='#'+customColor.toString(16).padStart(6,'0');ctx.beginPath();if(lastPaintPoint){ctx.moveTo(lastPaintPoint.x,lastPaintPoint.y);ctx.lineTo(x,y);ctx.lineWidth=brushSize*2;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=ctx.fillStyle;ctx.stroke()}ctx.beginPath();ctx.arc(x,y,brushSize,0,Math.PI*2);ctx.fill();player.userData.paintTexture.needsUpdate=true;paintHistory.push({x,y,r:brushSize,color:customColor,from:lastPaintPoint?{...lastPaintPoint}:null});if(paintHistory.length>240)paintHistory.shift();lastPaintPoint={x,y}};
+ let drawing=false;c.onpointerdown=e=>{drawing=true;lastPaintPoint=null;c.setPointerCapture(e.pointerId);draw(e)};c.onpointermove=e=>{if(drawing)draw(e)};const stopDrawing=()=>{drawing=false;lastPaintPoint=null};c.onpointerup=stopDrawing;c.onpointercancel=stopDrawing;
+ document.querySelectorAll('[data-brush]').forEach(b=>b.onclick=()=>{brushSize=Number(b.dataset.brush);document.querySelectorAll('[data-brush]').forEach(x=>x.classList.toggle('selected',x===b))});
+ $('paintUndo').onclick=()=>{const ctx=player.userData.paintCtx;ctx.clearRect(0,0,player.userData.paintCanvas.width,player.userData.paintCanvas.height);paintHistory.pop();for(const d of paintHistory){ctx.fillStyle='#'+d.color.toString(16).padStart(6,'0');if(d.from){ctx.beginPath();ctx.moveTo(d.from.x,d.from.y);ctx.lineTo(d.x,d.y);ctx.lineWidth=d.r*2;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=ctx.fillStyle;ctx.stroke()}ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fill()}player.userData.paintTexture.needsUpdate=true};
+ $('paintClear').onclick=()=>{player.userData.paintCtx.clearRect(0,0,player.userData.paintCanvas.width,player.userData.paintCanvas.height);paintHistory=[];player.userData.paintTexture.needsUpdate=true};
+ loadPaintData(player);
+}
 buildStageCards();
 if(window.THREE)init3D();else{setTimeout(()=>{if(!window.THREE)showError('Three.jsの読み込みに失敗しました。インターネット接続を確認してください。')},5000)}
 })();
