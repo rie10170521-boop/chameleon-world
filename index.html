@@ -34,6 +34,12 @@ h1{font-size:clamp(34px,7vw,64px);line-height:1.02;letter-spacing:-.05em;margin:
 #pause{position:fixed;z-index:9;inset:0;background:#061018b8;display:grid;place-items:center;padding:20px}
 @media(max-width:600px){.cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.thumb{height:57px}.stage .name{font-size:11px;padding:7px 5px}.panel{border-radius:20px}.screen{justify-content:flex-start;padding-top:max(16px,env(safe-area-inset-top))}.titlepanel{margin:auto 0}.hudmsg{top:22%}#joystick{width:116px;height:116px}#stick{left:32px;top:32px}.action{width:73px;height:67px}}
 @media(orientation:landscape) and (max-height:500px){.screen{padding:10px;justify-content:center}.panel{padding:14px 20px}.cards{grid-template-columns:repeat(6,minmax(0,1fr))}.thumb{height:42px}.stage .name{font-size:10px;padding:5px}.section{margin-top:10px}h1{font-size:34px}.big{margin-top:10px;padding:10px}.hudmsg{top:19%}}
+
+#paintScreen{z-index:7;background:linear-gradient(180deg,rgba(7,14,22,.16),rgba(7,14,22,.82));}
+.paintpanel{width:min(520px,100%);background:rgba(10,24,31,.91);border:1px solid #ffffff35;border-radius:24px;padding:20px;box-shadow:0 20px 70px #0008;backdrop-filter:blur(14px)}
+.palette{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin:14px 0}.swatch{aspect-ratio:1;border-radius:50%;padding:0;border:3px solid #ffffff55;min-width:0}.swatch.selected{outline:3px solid #fff;outline-offset:2px;box-shadow:0 0 0 5px #0006}
+.patterns{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.pattern{padding:10px 4px;font-size:12px}.paintnote{font-size:12px;color:#b7cbd0;line-height:1.5}
+@media(max-width:600px){.paintpanel{padding:16px}.palette{gap:7px}}
 </style>
 </head>
 <body>
@@ -51,10 +57,18 @@ h1{font-size:clamp(34px,7vw,64px);line-height:1.02;letter-spacing:-.05em;margin:
   <div class="section"><h2>03　あなたの役割</h2><div class="options" id="roles">
    <button class="rolecard selected" data-role="hide"><strong>🦎 隠れる側</strong><small>擬態して時間を稼ぐ</small></button><button class="rolecard" data-role="seek"><strong>🔎 探す側</strong><small>怪しい場所を調査する</small></button>
   </div></div>
-  <button id="start" class="primary big">ゲームスタート　→</button>
+  <button id="paintOpen" class="big">🎨 カメレオンをペイント</button><button id="start" class="primary big">ゲームスタート　→</button>
   <div class="sub" style="text-align:center;margin-top:10px">横画面推奨 · タッチ操作 · 1人用CPU対戦</div>
  </div>
 </div>
+<div id="paintScreen" class="screen hidden"><div class="paintpanel">
+ <div class="eyebrow">CUSTOMIZE YOUR CHAMELEON</div><h1 style="font-size:32px">自分だけの色にしよう 🎨</h1>
+ <p>色や模様を選ぶと、ゲーム中のカメレオンにも反映されるよ。</p>
+ <h2>① 体の色</h2><div class="palette" id="paintPalette"></div>
+ <h2>② 模様</h2><div class="patterns" id="paintPatterns"><button class="pattern selected" data-pattern="plain">なし</button><button class="pattern" data-pattern="spots">水玉</button><button class="pattern" data-pattern="stripes">しま模様</button><button class="pattern" data-pattern="stars">星柄</button></div>
+ <p class="paintnote">※ このバージョンでは体全体の色と模様を選べます。ブラシで部位ごとに塗る機能は次の拡張で追加できます。</p>
+ <button id="paintSave" class="primary big">このデザインで遊ぶ</button><button id="paintCancel" class="big">戻る</button>
+ </div></div>
 <div id="hud" class="hidden">
  <div class="hudtop"><div class="pill"><div class="hudlabel" id="rolelabel">HIDER</div><div style="font-weight:800" id="stagenamehud">日本の路地裏</div></div><div class="pill" style="text-align:right"><div class="hudlabel">TIME LEFT</div><div class="timer" id="timer">01:30</div></div><button id="pausebtn" style="pointer-events:auto;padding:10px 12px">Ⅱ</button></div>
  <div class="hudmsg" id="message">隠れ場所を探そう</div>
@@ -84,7 +98,7 @@ const themes=[
 {name:'ちいさな商店街',emoji:'🧸',a:'#e6a46c',b:'#9bc9b5',sky:0xb8d9dc,ground:0xb5a18b,wall:0xf0d8ad,accent:0xe57f72,items:['おもちゃ箱','カフェ看板','商品棚'],style:'toy'}
 ];
 const diffs=[{name:'EASY',time:110,speed:.85,detect:4.1,hint:13},{name:'NORMAL',time:90,speed:1,detect:3.1,hint:18},{name:'HARD',time:72,speed:1.22,detect:2.45,hint:25},{name:'EXPERT',time:55,speed:1.42,detect:1.9,hint:33}];
-let stage=0,diff=0,role='hide',scene,camera,renderer,clock,player,cpu,ground,worldObjects=[],hidingSpots=[],seed=1,running=false,paused=false,elapsed=0,timeLeft=90,prep=5,blendOn=false,gameOver=false,lastHint=0,seekTarget=null,move={x:0,y:0},yaw=0,pitch=-.14,lookPointer=null,raf=0,quality='low',audioOn=true,audioCtx=null;
+let customColor=Number(localStorage.getItem('cwColor')||'0x73d6ad'),customPattern=localStorage.getItem('cwPattern')||'plain',paintYaw=0,stage=0,diff=0,role='hide',scene,camera,renderer,clock,player,cpu,ground,worldObjects=[],hidingSpots=[],seed=1,running=false,paused=false,elapsed=0,timeLeft=90,prep=5,blendOn=false,gameOver=false,lastHint=0,seekTarget=null,move={x:0,y:0},yaw=0,pitch=-.14,lookPointer=null,raf=0,quality='low',audioOn=true,audioCtx=null;
 const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
 const choose=a=>a[Math.floor(rand()*a.length)];
 function showError(msg){$('loading').classList.add('hidden');$('error').classList.remove('hidden');$('errortext').textContent=msg}
@@ -93,26 +107,44 @@ function init3D(){
  try{scene=new THREE.Scene();scene.background=new THREE.Color(themes[0].sky);scene.fog=new THREE.Fog(themes[0].sky,22,62);
  camera=new THREE.PerspectiveCamera(64,innerWidth/innerHeight,.1,120);
  renderer=new THREE.WebGLRenderer({canvas:$('world'),antialias:false,alpha:false,powerPreference:'low-power'});
- renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=false;
+ renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
  renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
  clock=new THREE.Clock();buildWorld(0);animate();$('loading').classList.add('hidden');$('menu').classList.remove('hidden');
  }catch(e){showError('この端末では3D表示を開始できませんでした。ページを再読み込みしてください。')}
 }
 function mat(color,rough=.9,metal=0){return new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal})}
-function box(w,h,d,color,x,y,z,opts={}){let mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color,opts.rough??.9,opts.metal??0));mesh.position.set(x,y,z);mesh.castShadow=false;mesh.receiveShadow=false;scene.add(mesh);worldObjects.push(mesh);return mesh}
-function cylinder(r1,r2,h,color,x,y,z,segments=7){let m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,segments),mat(color));m.position.set(x,y,z);scene.add(m);worldObjects.push(m);return m}
-function sphere(r,color,x,y,z,segments=8){let m=new THREE.Mesh(new THREE.SphereGeometry(r,segments,6),mat(color));m.position.set(x,y,z);scene.add(m);worldObjects.push(m);return m}
-function makePerson(color=0x7bd8b0){
- const g=new THREE.Group(),skin=mat(color),dark=mat(0x253d3a),eye=mat(0xf4f4d9);
- const torso=new THREE.Mesh(new THREE.BoxGeometry(.48,.68,.28),skin);torso.position.y=1.05;g.add(torso);
- const head=new THREE.Mesh(new THREE.BoxGeometry(.42,.4,.4),skin);head.position.y=1.62;g.add(head);
- for(let s of [-1,1]){let arm=new THREE.Mesh(new THREE.BoxGeometry(.17,.58,.19),skin);arm.position.set(s*.34,1.04,0);arm.rotation.z=s*-.1;g.add(arm);
- let leg=new THREE.Mesh(new THREE.BoxGeometry(.19,.53,.22),dark);leg.position.set(s*.13,.36,0);g.add(leg);
- let e=new THREE.Mesh(new THREE.BoxGeometry(.07,.07,.035),eye);e.position.set(s*.1,1.67,-.207);g.add(e)}
- let tail=new THREE.Mesh(new THREE.CylinderGeometry(.035,.09,.48,6),skin);tail.position.set(0,.78,.27);tail.rotation.x=-1.1;g.add(tail);
- g.userData.baseColor=color;g.userData.body=torso;g.userData.head=head;g.userData.skin=skin;
+function box(w,h,d,color,x,y,z,opts={}){let mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color,opts.rough??.9,opts.metal??0));mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);worldObjects.push(mesh);return mesh}
+function cylinder(r1,r2,h,color,x,y,z,segments=7){let m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,segments),mat(color));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);worldObjects.push(m);return m}
+function sphere(r,color,x,y,z,segments=8){let m=new THREE.Mesh(new THREE.SphereGeometry(r,segments,6),mat(color));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);worldObjects.push(m);return m}
+function makePerson(color=customColor){
+ const g=new THREE.Group(),skin=mat(color,.62),dark=mat(0x244c42,.8),eyeWhite=mat(0xfff5d9,.28),pupil=mat(0x14252b,.2),belly=mat(new THREE.Color(color).multiplyScalar(.72),.72);
+ // Rounded, friendly chameleon body instead of blocky humanoid parts
+ const torso=new THREE.Mesh(new THREE.SphereGeometry(.58,20,14),skin);torso.scale.set(1.12,.72,1.42);torso.position.set(0,.83,0);g.add(torso);
+ const chest=new THREE.Mesh(new THREE.SphereGeometry(.42,16,12),belly);chest.scale.set(.92,.7,.7);chest.position.set(0,.68,-.28);g.add(chest);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.42,20,14),skin);head.scale.set(1.08,.88,1.12);head.position.set(0,1.26,-.55);g.add(head);
+ for(const side of [-1,1]){
+  const bump=new THREE.Mesh(new THREE.SphereGeometry(.19,14,10),skin);bump.position.set(side*.32,1.48,-.55);g.add(bump);
+  const white=new THREE.Mesh(new THREE.SphereGeometry(.145,14,10),eyeWhite);white.position.set(side*.34,1.48,-.69);g.add(white);
+  const black=new THREE.Mesh(new THREE.SphereGeometry(.075,12,8),pupil);black.position.set(side*.35,1.48,-.81);g.add(black);
+  const glint=new THREE.Mesh(new THREE.SphereGeometry(.026,8,6),mat(0xffffff,.15));glint.position.set(side*.37,1.53,-.86);g.add(glint);
+  for(const [x,z] of [[side*.34,-.05],[side*.32,.24]]){const leg=new THREE.Mesh(new THREE.SphereGeometry(.16,12,8),skin);leg.scale.set(.72,.65,1.1);leg.position.set(x,.38,z);g.add(leg);const foot=new THREE.Mesh(new THREE.SphereGeometry(.13,12,8),skin);foot.scale.set(1.3,.55,1.5);foot.position.set(x,.18,z-.1);g.add(foot)}
+ }
+ // Curled tail made from overlapping segments
+ let prev=new THREE.Vector3(0,.8,.46);for(let i=0;i<12;i++){let a=i/11*Math.PI*1.8;let radius=.38*(1-i/13);let pt=new THREE.Vector3(Math.sin(a)*radius,.72+Math.sin(a*.8)*.14,.48+Math.cos(a)*radius);const seg=new THREE.Mesh(new THREE.SphereGeometry(.105*(1-i/16),10,8),skin);seg.position.copy(pt);g.add(seg);prev=pt}
+ // tiny crest bumps
+ for(let i=0;i<5;i++){const spike=new THREE.Mesh(new THREE.SphereGeometry(.075,8,6),dark);spike.scale.set(.65,1.25,.65);spike.position.set(0,1.65-i*.055,-.52+i*.18);g.add(spike)}
+ g.userData.baseColor=color;g.userData.body=torso;g.userData.head=head;g.userData.skin=skin;g.userData.belly=belly;g.userData.patternGroup=new THREE.Group();g.add(g.userData.patternGroup);applyPattern(g,customPattern);
  scene.add(g);return g
 }
+function applyPattern(actor,pattern){
+ if(!actor||!actor.userData.patternGroup)return;const group=actor.userData.patternGroup;while(group.children.length){const o=group.children.pop();o.geometry?.dispose();if(o.material&&!Array.isArray(o.material))o.material.dispose()}
+ if(pattern==='plain')return;const c=pattern==='stars'?0xffdf70:pattern==='stripes'?0xf5f3ce:0x183f50;
+ if(pattern==='spots'){for(let i=0;i<16;i++){const a=i*2.399,r=.25+(i%3)*.06;const dot=new THREE.Mesh(new THREE.SphereGeometry(.055,8,6),mat(c,.55));dot.position.set(Math.cos(a)*r,.82+(i%4)*.13,Math.sin(a)*.42-.03);group.add(dot)}}
+ else if(pattern==='stripes'){for(let i=0;i<4;i++){const band=new THREE.Mesh(new THREE.TorusGeometry(.48-i*.035,.035,5,18),mat(c,.6));band.rotation.x=Math.PI/2;band.position.set(0,.7+i*.13,0);group.add(band)}}
+ else if(pattern==='stars'){for(let i=0;i<7;i++){const star=new THREE.Mesh(new THREE.OctahedronGeometry(.085),mat(c,.4,.1));star.position.set(Math.sin(i*2.4)*.34,.72+(i%3)*.18,Math.cos(i*2.4)*.35);group.add(star)}}
+}
+function applyChameleonColor(actor,color){if(!actor)return;actor.traverse(o=>{if(o.isMesh&&o.material&&o.material.color&&o.material!==actor.userData.belly){if(o.material===actor.userData.skin||o.material.color.getHex()===actor.userData.baseColor)o.material.color.setHex(color)}});actor.userData.baseColor=color;actor.userData.skin.color.setHex(color);if(actor.userData.body)actor.userData.body.material.color.setHex(color);if(actor.userData.head)actor.userData.head.material.color.setHex(color);if(actor.userData.belly)actor.userData.belly.color.setHex(new THREE.Color(color).multiplyScalar(.72))}
+
 function makeProp(style,x,z,scale=1){
  const t=themes[stage],r=rand();
  let obj,base=t.wall,accent=t.accent;
@@ -131,8 +163,10 @@ function makeProp(style,x,z,scale=1){
 function buildWorld(si){
  stage=si;const t=themes[stage];scene.clear();worldObjects=[];hidingSpots=[];scene.background=new THREE.Color(t.sky);scene.fog=new THREE.Fog(t.sky,24,64);
  scene.add(new THREE.HemisphereLight(0xe4f5ff,0x645347,2.0));
- const sun=new THREE.DirectionalLight(0xffe4bc,2.5);sun.position.set(-8,15,7);scene.add(sun);
- ground=new THREE.Mesh(new THREE.PlaneGeometry(54,54),mat(t.ground));ground.rotation.x=-Math.PI/2;ground.position.y=-.08;scene.add(ground);
+ const sun=new THREE.DirectionalLight(0xffe4bc,3.1);sun.position.set(-8,15,7);sun.castShadow=true;sun.shadow.mapSize.set(512,512);sun.shadow.camera.left=-26;sun.shadow.camera.right=26;sun.shadow.camera.top=26;sun.shadow.camera.bottom=-26;scene.add(sun);
+ ground=new THREE.Mesh(new THREE.PlaneGeometry(54,54,24,24),mat(t.ground));ground.rotation.x=-Math.PI/2;ground.position.y=-.08;ground.receiveShadow=true;scene.add(ground);
+ // layered landscape details give the arena more depth and a crafted miniature-world feel
+ for(let i=0;i<90;i++){let x=(rand()-.5)*48,z=(rand()-.5)*48;if(Math.abs(x)<5&&Math.abs(z)<5)continue;let rock=sphere(.12+rand()*.2,t.style==='snow'?0xdce8ec:t.style==='beach'?0xe6d3a7:0x8a9a79,x,.02,z,7);rock.scale.set(1.5,.55,1);rock.rotation.y=rand()*Math.PI;rock.castShadow=true;}
  // Street layout: central lane, cross lanes, blocks and alley-facing façades.
  box(8,.025,42,0x777873,0,-.045,0);box(42,.025,7,0x777873,0,-.04,0);
  for(let i=-18;i<=18;i+=3){box(.08,.012,.55,0xd8c9a3,i,.0,0);box(.55,.012,.08,0xd8c9a3,0,.0,i)}
@@ -158,9 +192,9 @@ function buildWorld(si){
  for(let i=0;i<10;i++){let x=(rand()-.5)*34,z=(rand()-.5)*34;if(Math.abs(x)<5&&Math.abs(z)<5)continue;
  if(t.style==='jungle'||t.style==='beach'||rand()>.45){cylinder(.09,.14,1.1,0x6b503b,x,.55,z);sphere(.5,t.style==='snow'?0xf0f4f4:t.style==='jungle'?0x276747:0x4d8054,x,1.25,z)}
  }
- player=makePerson(role==='hide'?0x73d6ad:0x72b5e8);player.position.set(-1,0,2);
+ player=makePerson(customColor);player.position.set(-1,0,2);applyChameleonColor(player,customColor);
  cpu=makePerson(role==='hide'?0xe6a16c:0x79d4a8);cpu.position.set(2,0,-2);
- player.visible=true;cpu.visible=true;
+ applyPattern(player,customPattern);applyPattern(cpu,customPattern);player.visible=true;cpu.visible=true;
  // If you are seeking, the CPU blends beside a prop. If hiding, seeker starts at far end.
  if(role==='seek'){player.position.set(-1,0,2);cpu.position.set(choose([-12,12,-15,15]),0,choose([-12,12,-15,15]));cpu.visible=false;seekTarget=cpu}
  else{player.position.set(choose([-8,-5,5,8]),0,choose([-8,8,12,-12]));cpu.position.set(0,0,-17);seekTarget=player}
@@ -208,7 +242,7 @@ function update(dt){
    else {cpu.userData.patrol=(cpu.userData.patrol||0)+dt;if(cpu.userData.patrol>3){cpu.userData.patrol=0;cpu.userData.tx=choose([-13,-8,0,8,13]);cpu.userData.tz=choose([-14,-8,0,8,14])}
     const tx=(cpu.userData.tx||0)-cpu.position.x,tz=(cpu.userData.tz||-12)-cpu.position.z,dd=Math.hypot(tx,tz);if(dd>1.2)moveActor(cpu,tx/dd,tz/dd,dt*.65)}
    if(blendOn&&!moving){player.userData.skin.color.setHex(nearestColor(player.position.x,player.position.z));player.userData.body.material.color.copy(player.userData.skin.color);player.userData.head.material.color.copy(player.userData.skin.color)}
-   else if(!blendOn){player.userData.skin.color.setHex(0x73d6ad);player.userData.body.material.color.setHex(0x73d6ad);player.userData.head.material.color.setHex(0x73d6ad)}
+   else if(!blendOn){applyChameleonColor(player,customColor)}
    if(dist<.95){finish(false,'CPUに見つかってしまった！','もう少し物陰を使って、静かに擬態しよう。')}
    if(timeLeft<=0)finish(true,'見事な擬態！','制限時間を逃げ切りました。あなたの勝ち！');
  }else{
@@ -257,6 +291,13 @@ $('world').addEventListener('pointerdown',e=>{if(!running||paused)return;if(e.cl
 $('world').addEventListener('pointermove',e=>{if(!lookPointer||e.pointerId!==lookPointer.id)return;let dx=e.clientX-lookPointer.x,dy=e.clientY-lookPointer.y;lookPointer.x=e.clientX;lookPointer.y=e.clientY;yaw-=dx*.006;pitch=Math.max(-.65,Math.min(.32,pitch+dy*.0035))});
 $('world').addEventListener('pointerup',e=>{if(lookPointer&&e.pointerId===lookPointer.id)lookPointer=null});$('world').addEventListener('pointercancel',()=>lookPointer=null);
 document.addEventListener('contextmenu',e=>e.preventDefault());
+const paintColors=[['Lime',0x73d6ad],['Ocean',0x38bde0],['Sunset',0xff8a52],['Violet',0xb58aff],['Rose',0xf46fa7],['Gold',0xffd34e],['Mint',0x7bf0d0],['Leaf',0x39865b],['Ice',0xd5f5ff],['Midnight',0x34405f],['Coral',0xff665e],['Rainbow',0xe9ed68]];
+function refreshPaintUI(){const root=$('paintPalette');root.innerHTML='';paintColors.forEach(([name,color])=>{const b=document.createElement('button');b.className='swatch'+(Number(customColor)===color?' selected':'');b.style.background='#'+color.toString(16).padStart(6,'0');b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>{customColor=color;root.querySelectorAll('.swatch').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');if(player)applyChameleonColor(player,color);if(cpu)applyChameleonColor(cpu,color)};root.appendChild(b)});document.querySelectorAll('[data-pattern]').forEach(b=>b.classList.toggle('selected',b.dataset.pattern===customPattern))}
+$('paintOpen').addEventListener('click',()=>{running=false;$('menu').classList.add('hidden');$('paintScreen').classList.remove('hidden');buildWorld(stage);player.position.set(0,0,0);player.rotation.y=paintYaw;cpu.visible=false;camera.position.set(0,2.35,4.8);camera.lookAt(0,.85,0);refreshPaintUI()});
+$('paintPatterns').addEventListener('click',e=>{const b=e.target.closest('[data-pattern]');if(!b)return;customPattern=b.dataset.pattern;document.querySelectorAll('[data-pattern]').forEach(x=>x.classList.toggle('selected',x===b));if(player)applyPattern(player,customPattern);if(cpu)applyPattern(cpu,customPattern)});
+$('paintSave').addEventListener('click',()=>{localStorage.setItem('cwColor',String(customColor));localStorage.setItem('cwPattern',customPattern);$('paintScreen').classList.add('hidden');$('menu').classList.remove('hidden');buildWorld(stage)});
+$('paintCancel').addEventListener('click',()=>{$('paintScreen').classList.add('hidden');$('menu').classList.remove('hidden');buildWorld(stage)});
+$('world').addEventListener('pointermove',e=>{if($('paintScreen').classList.contains('hidden')||!player)return; if(e.buttons){paintYaw+=(e.movementX||0)*.01;player.rotation.y=paintYaw;camera.position.set(Math.sin(paintYaw)*4.8,2.35,Math.cos(paintYaw)*4.8);camera.lookAt(0,.85,0)}});
 buildStageCards();
 if(window.THREE)init3D();else{setTimeout(()=>{if(!window.THREE)showError('Three.jsの読み込みに失敗しました。インターネット接続を確認してください。')},5000)}
 })();
